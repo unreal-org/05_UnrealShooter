@@ -44,13 +44,12 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
 {
     if (!ensure(MainState)) { return; }
 
-    // UE_LOG(LogTemp, Warning, TEXT("%i"), MainState->GetCurrentState())
     switch (MainState->GetCurrentState())
     {
         case 0: // Idle
             LeftFootLocation = IKFootTrace(0);
             RightFootLocation = IKFootTrace(1);
-            //IKHands(DeltaTimeX);
+            IKHands(DeltaTimeX);
             //SphereTrace(DeltaTimeX);
             break;
     }
@@ -223,7 +222,6 @@ void UMainAnimInstance::TargetInterp(FVector LeftHandInterpTo, FVector RightHand
 FVector UMainAnimInstance::IKFootTrace(int32 Foot)
 {
     if (!ensure(GetSkelMeshComponent())) { return FVector(0, 0, 0); }
-    if (!ensure(CapsuleComponent)) { return FVector(0, 0, 0); }
 
     FName FootName;
     FVector FootSocketLocation;
@@ -237,7 +235,8 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
         FootSocketLocation = GetSkelMeshComponent()->GetSocketLocation(FootName);
     }
 
-    float CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight();
+    float CapsuleHalfHeight = 88;
+    if (CapsuleComponent) { CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight(); }
     FVector StartTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight);
     FVector EndTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight - CapsuleHalfHeight - 15); // 15 = trace distance;
 

@@ -45,5 +45,8 @@ private:
 	UUIWidget* MainMenu;
 	UUIWidget* CharacterSelect;
 	UUIWidget* ModeSelect;
+
+	// Menu Pawn
+	class AMenuPawn* MenuPawn = nullptr;
 	
 };
