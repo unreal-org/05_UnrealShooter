@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "UIWidget.h"
 #include "MenuPawn.h"
+#include "UnrealCharacter.h"
 
 void AMainPlayerController::BeginPlay()
 {
@@ -15,14 +16,19 @@ void AMainPlayerController::BeginPlay()
     if (!ensure(CharacterSelectTarget)) { return; }
     if (!ensure(ModeSelectTarget)) { return; }
 	
+    // Set UI Widget references
     MainMenu = CreateWidget<UUIWidget>(this, MainMenuTarget);
     CharacterSelect = CreateWidget<UUIWidget>(this, CharacterSelectTarget);
     ModeSelect = CreateWidget<UUIWidget>(this, ModeSelectTarget);
+    ModeReady = CreateWidget<UUIWidget>(this, ModeReadyTarget);
 
+    // Add MainMenu to viewport
     if (MainMenu) { MainMenu->AddToViewport(); }
 
+    // Show Cursor
     bShowMouseCursor = true;
 
+    // Get MenuPawn Reference
     for (TActorIterator<AMenuPawn> It(GetWorld()); It; ++It)
 	{
 		AMenuPawn* Target = *It;
@@ -32,8 +38,11 @@ void AMainPlayerController::BeginPlay()
 	}
 }
 
+///////////////////////////////// UI Functions ////////////////////////////////////
 void AMainPlayerController::OnClickedStart()
 {
+    if (!ensure(MenuPawn)) { return; }
+
     MainMenu->RemoveFromViewport();
     CharacterSelect->AddToViewport();
     
@@ -43,6 +52,8 @@ void AMainPlayerController::OnClickedStart()
 
 void AMainPlayerController::OnClickedReturnToTitle()
 {
+    if (!ensure(MenuPawn)) { return; }
+
     CharacterSelect->RemoveFromViewport();
     MainMenu->AddToViewport();
 
@@ -52,42 +63,148 @@ void AMainPlayerController::OnClickedReturnToTitle()
 
 void AMainPlayerController::OnClickedCharacterNext()
 {
+    if (!ensure(MenuPawn)) { return; }
+
     // Set MenuPawn's target spline point to next character
     MenuPawn->OnClickedCharacterNext();
 }
 
 void AMainPlayerController::OnClickedCharacterPrev()
 {
+    if (!ensure(MenuPawn)) { return; }
+    
     // Set MenuPawn's target spline point to prev character
     MenuPawn->OnClickedCharacterPrev();
 }
 
 void AMainPlayerController::OnClickedCharacterConfirm()
 {
-    CharacterSelect->RemoveFromViewport();
-    ModeSelect->AddToViewport();
+    if (!ensure(MenuPawn)) { return; }
 
-    // Possess Chosen Character & Pan Camera & Play Chosen Character Animation
-    MenuPawn->OnClickedCharacterConfirm();
+    if (MenuPawn) {
+        CharacterSelect->RemoveFromViewport();
+        ModeSelect->AddToViewport();
+
+        // Zoom in Camera & Play Chosen Character Animation
+        MenuPawn->OnClickedCharacterConfirm();
+
+        // Determine Character ID
+        switch(MenuPawn->GetCharacterID())
+        {
+            case 0: // Character 0
+                TargetCharacter = FString("UnrealCharacter_BP_2");
+                break;
+            case 1: // Character 1
+                TargetCharacter = FString("UnrealCharacter_BP2_2");
+                break;
+            case 2: // Character 2
+                TargetCharacter = FString("UnrealCharacter_BP3_5");
+                break;
+            case 3: // Character 3
+                TargetCharacter = FString("UnrealCharacter_BP4_8");
+                break;
+        }
+    }
 }
 
 void AMainPlayerController::OnClickedModeSelectReturn()
 {
+    if (!ensure(MenuPawn)) { return; }
+
     ModeSelect->RemoveFromViewport();
     CharacterSelect->AddToViewport();
 
-    // DePossess Chosen Character & DePan Camera
+    // Zoom out Camera
     MenuPawn->OnClickedModeSelectReturn();
 }
 
 void AMainPlayerController::OnClickedModeSelectPractice()
 {
+    if (!ensure(MenuPawn)) { return; }
+
+    ModeSelect->RemoveFromViewport();
     // Generate Target Practice Area
     MenuPawn->OnClickedModeSelectPractice();
+
+    // Possess Character
+	for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
+	{
+		class AUnrealCharacter* Target = *It;
+		if (Target && Target->GetName() == TargetCharacter) {
+			Character = Target;
+		}
+	}
+
+    // Set Menu Pawn Targets
+    MenuPawn->SetCharacter(Character);
+
+    // Set Character Targets
+    Character->SetActorTickEnabled(true);
+    Character->SetCharacterGameLocation();
+    Character->SetCharacterRotation(FRotator(0, -90, 0));
+
+    // Generate Practice Area
+    ConstructPracticeArea();
 }
 
 void AMainPlayerController::OnClickedModeSelectShowdown()
 {
-    // Generate Western Town Area & Find opponent for Network Play
+    if (!ensure(MenuPawn)) { return; }
+
+    ModeSelect->RemoveFromViewport();
+    // Find opponent for Network Play
     MenuPawn->OnClickedModeSelectShowdown();
+
+    // Possess Character
+	for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
+	{
+		class AUnrealCharacter* Target = *It;
+		if (Target && Target->GetName() == TargetCharacter) {
+			Character = Target;
+		}
+	}
+
+    // Set Menu Pawn Targets
+    MenuPawn->SetCharacter(Character);
+
+    // Set Character Targets
+    Character->SetActorTickEnabled(true);
+    Character->SetCharacterGameLocation();
+    Character->SetCharacterRotation(FRotator(0, -90, 0));
+
+    // Find Opponent
+}
+
+void AMainPlayerController::OnClickedModeReadyStart()
+{
+    if (!ensure(MenuPawn) || !ensure(Character)) { return; }
+
+    ModeReady->RemoveFromViewport();
+    MenuPawn->OnClickedModeReadyStart();
+    
+    // Possess Character
+    Possess(Character);
+    Character->SetCharacterState(2);
+}
+
+void AMainPlayerController::OnClickedModeReadyReturn()
+{
+    if (!ensure(MenuPawn)) { return; }
+
+    ModeReady->RemoveFromViewport();
+    MenuPawn->OnClickedModeReadyReturn();
+    CharacterSelect->AddToViewport();
+
+    // Zoom out Camera
+    Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+    Character->SetCharacterRotation(FRotator(0, 0, 0));
+}
+
+// Practice Area
+void AMainPlayerController::ConstructPracticeArea()
+{
+    // Construct stuff here
+
+    // Bring up Mode Ready UI
+    ModeReady->AddToViewport();
 }

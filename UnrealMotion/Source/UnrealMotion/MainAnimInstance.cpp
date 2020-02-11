@@ -9,11 +9,12 @@
 #include "EngineUtils.h"
 #include "Containers/Array.h"
 
-// Constructors
+///////////////////////////////// Constructors ////////////////////////////////////
 UMainAnimInstance::UMainAnimInstance(const FObjectInitializer &ObjectInitializer)
     : Super(ObjectInitializer)
 {}
 
+/////////////////////////////////// Begin Play ///////////////////////////////////////
 void UMainAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
@@ -21,25 +22,30 @@ void UMainAnimInstance::NativeInitializeAnimation()
     if (!ensure(GetSkelMeshComponent())) { return; }
     if (!ensure(GetSkelMeshComponent()->GetOwner())) { return; }
 
+    // Get State
     MainState = GetStateMachineInstanceFromName(FName(TEXT("MainState")));
     CapsuleComponent = GetSkelMeshComponent()->GetOwner()->FindComponentByClass<UCapsuleComponent>();
 
+    // IK Foot Trace parameters
     TraceParameters = FCollisionQueryParams(TraceTag, false);
     TraceParameters.AddIgnoredComponent(Cast<UPrimitiveComponent>(GetSkelMeshComponent()));
     TraceParameters.AddIgnoredActor(Cast<AActor>(GetSkelMeshComponent()->GetOwner()));
 
+    // Ignore platform objects (floor, walls, etc)
     for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
 	{
 		AStaticMeshActor* Target = *It;
 		IgnoredActors.Add(Target);
 	}
 
+    // Add Spine bones to struct array
     Spine.Add(FJoint(FName(TEXT("neck_01")), FRotator(0, 0, 0), FRotator(45, 60, 60)));
     Spine.Add(FJoint(FName(TEXT("spine_03")), FRotator(0, 0, 0), FRotator(15, 20, 20)));
     Spine.Add(FJoint(FName(TEXT("spine_02")), FRotator(0, 0, 0), FRotator(10, 10, 10)));
     Spine.Add(FJoint(FName(TEXT("spine_01")), FRotator(0, 0, 0), FRotator(5, 10, 10)));
 }
 
+///////////////////////////////////// Tick ///////////////////////////////////////
 void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
 {
     if (!ensure(MainState)) { return; }
@@ -52,10 +58,13 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
             IKHands(DeltaTimeX);
             //SphereTrace(DeltaTimeX);
             break;
+        case 1: // Walking
+            break;
     }
 
 }
 
+/////////////////////////////// Transition Functions //////////////////////////////
 void UMainAnimInstance::AnimNotify_IdleEntry()
 {
     LeftFootIKAlpha = 1;
@@ -64,14 +73,75 @@ void UMainAnimInstance::AnimNotify_IdleEntry()
     RightHandIKAlpha = 0;
 }
 
+/////////////////////////////// Sphere Trace ////////////////////////////////
+void UMainAnimInstance::SphereTrace(float DeltaTimeX)
+{
+    if (!ensure(GetSkelMeshComponent())) { return; }
+
+    FVector Start = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("sphere_trace_start")));
+    FVector End = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("sphere_trace_end")));
+    FHitResult TraceResult(ForceInit);
+
+    bool Trace = UKismetSystemLibrary::SphereTraceSingle(
+        GetWorld(),
+        Start,
+        End,
+        160,
+        ETraceTypeQuery::TraceTypeQuery1,
+        false,
+        IgnoredActors,
+        EDrawDebugTrace::ForOneFrame,
+        TraceResult,
+        true,
+        FLinearColor(0, 0, 255, 1),
+        FLinearColor(255, 0, 0, 1),
+        1
+    );
+
+    if (Trace) {
+        if (!ensure(TraceResult.GetActor())) { return; }
+
+        // Set TargetNeckRotation
+        FVector Neck = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("neck_01")));
+        FVector TraceLocation = TraceResult.GetActor()->GetActorLocation();
+        TargetNeckRotation = UKismetMathLibrary::FindLookAtRotation(Neck, TraceLocation);
+
+        // Identify Threat
+        FVector ThreatDistance = Neck - TraceLocation;
+        if (ThreatDistance.Size() < ThreatThreshold && Threat < ThreatMax) {
+            Threat += 1;
+            ThreatVector = (UKismetMathLibrary::GetDirectionUnitVector(TraceLocation, Neck) * Threat * ThreatSensitivity) / ThreatDistance.Size();
+        }
+        else if (ThreatDistance.Size() > ThreatThreshold && Threat > ThreatMin) {
+            if (!ThreatVector.Equals(FVector(0, 0, 0), 1)) {
+                FVector Reset = FVector(ThreatVector.X / 100, ThreatVector.Y / 100, ThreatVector.Z / 100);
+                ThreatVector -= Reset;
+            }
+        }
+
+    } else {
+        Threat = 1;
+        ThreatVector = FVector(0, 0, 0);
+
+        // Unwind if Threat & Object out of range
+        if (!TargetNeckRotation.Equals(FRotator(0, 0, 0), 1)) {
+            FRotator Unwind = FRotator(TargetNeckRotation.Pitch / 30, TargetNeckRotation.Yaw / 30, TargetNeckRotation.Roll / 30);
+            TargetNeckRotation -= Unwind;
+        }
+    }
+    
+    TargetLerp(DeltaTimeX, 0.5);
+    return;
+}
+
 void UMainAnimInstance::TargetLerp(float DeltaTimeX, float Beta)
 {
     // Clamp Angles
     FRotator TargetRotation = TargetNeckRotation;
-    FRotator Sway = FRotator(-ThreatVector.X, 0, ThreatVector.Y);  
+    FRotator Sway = FRotator(-ThreatVector.X, 0, ThreatVector.Y);  // Sway from Threat
 
     Spine[0].TargetJointRotation = RotatorClamp(TargetRotation, Spine[0].ClampRotation);
-    TargetRotation = RotationAdjust(Spine, 0, TargetRotation) + Sway;
+    TargetRotation = RotationAdjust(Spine, 0, TargetRotation) + Sway;  // Add sway here
     Spine[3].TargetJointRotation = RotatorClamp(TargetRotation, Spine[1].ClampRotation);
     TargetRotation = RotationAdjust(Spine, 1, TargetRotation);
     Spine[2].TargetJointRotation = RotatorClamp(TargetRotation, Spine[2].ClampRotation);
@@ -89,6 +159,7 @@ void UMainAnimInstance::TargetLerp(float DeltaTimeX, float Beta)
     }
 }
 
+// Clamp Rotations & Send Excess to Parent Bone
 FRotator UMainAnimInstance::RotationAdjust(TArray<FJoint> BoneChain, int i, FRotator InitialTargetRotation)
 {   
     if (i >= BoneChain.Num()) { return InitialTargetRotation; }
@@ -125,6 +196,7 @@ FRotator UMainAnimInstance::RotationAdjust(TArray<FJoint> BoneChain, int i, FRot
     return InitialTargetRotation;
 }
 
+// Clamp Rotations using Joint Struct
 FRotator UMainAnimInstance::RotatorClamp(FRotator TargetRotator, FRotator ClampRotator)
 {
     TargetRotator.Pitch = FMath::ClampAngle(TargetRotator.Pitch, -ClampRotator.Pitch, ClampRotator.Pitch);
@@ -134,64 +206,7 @@ FRotator UMainAnimInstance::RotatorClamp(FRotator TargetRotator, FRotator ClampR
     return TargetRotator;
 }
 
-void UMainAnimInstance::SphereTrace(float DeltaTimeX)
-{
-    if (!ensure(GetSkelMeshComponent())) { return; }
-
-    FVector Start = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("sphere_trace_start")));
-    FVector End = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("sphere_trace_end")));
-    FHitResult TraceResult(ForceInit);
-
-    bool Trace = UKismetSystemLibrary::SphereTraceSingle(
-        GetWorld(),
-        Start,
-        End,
-        160,
-        ETraceTypeQuery::TraceTypeQuery1,
-        false,
-        IgnoredActors,
-        EDrawDebugTrace::ForOneFrame,
-        TraceResult,
-        true,
-        FLinearColor(0, 0, 255, 1),
-        FLinearColor(255, 0, 0, 1),
-        1
-    );
-
-    if (Trace) {
-        if (!ensure(TraceResult.GetActor())) { return; }
-
-        FVector Neck = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("neck_01")));
-        FVector TraceLocation = TraceResult.GetActor()->GetActorLocation();
-        TargetNeckRotation = UKismetMathLibrary::FindLookAtRotation(Neck, TraceLocation);
-
-        FVector ThreatDistance = Neck - TraceLocation;
-        if (ThreatDistance.Size() < ThreatThreshold && Threat < ThreatMax) {
-            Threat += 1;
-            ThreatVector = (UKismetMathLibrary::GetDirectionUnitVector(TraceLocation, Neck) * Threat * ThreatSensitivity) / ThreatDistance.Size();
-        }
-        else if (ThreatDistance.Size() > ThreatThreshold && Threat > ThreatMin) {
-            if (!ThreatVector.Equals(FVector(0, 0, 0), 1)) {
-                FVector Reset = FVector(ThreatVector.X / 100, ThreatVector.Y / 100, ThreatVector.Z / 100);
-                ThreatVector -= Reset;
-            }
-        }
-
-    } else {
-        Threat = 1;
-        ThreatVector = FVector(0, 0, 0);
-
-        if (!TargetNeckRotation.Equals(FRotator(0, 0, 0), 1)) {
-            FRotator Unwind = FRotator(TargetNeckRotation.Pitch / 30, TargetNeckRotation.Yaw / 30, TargetNeckRotation.Roll / 30);
-            TargetNeckRotation -= Unwind;
-        }
-    }
-    
-    TargetLerp(DeltaTimeX, 0.5);
-    return;
-}
-
-// TODO : Direct hands to cover vital spots in danger
+///////////////////////////////// IK //////////////////////////////////////////
 void UMainAnimInstance::IKHands(float DeltaTimeX)
 {
     if (!ensure(GetSkelMeshComponent())) { return; }
@@ -207,6 +222,7 @@ void UMainAnimInstance::IKHands(float DeltaTimeX)
     return;
 }
 
+// IK Hands Interp
 void UMainAnimInstance::TargetInterp(FVector LeftHandInterpTo, FVector RightHandInterpTo, float DeltaTimeX)
 {
     FVector LeftHandCurrent = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("hand_l")));
@@ -223,6 +239,7 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
 {
     if (!ensure(GetSkelMeshComponent())) { return FVector(0, 0, 0); }
 
+    // Determine which foot
     FName FootName;
     FVector FootSocketLocation;
     if (Foot == 0) {
@@ -235,6 +252,7 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
         FootSocketLocation = GetSkelMeshComponent()->GetSocketLocation(FootName);
     }
 
+    // Determine Trace Start & End points
     float CapsuleHalfHeight = 88;
     if (CapsuleComponent) { CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight(); }
     FVector StartTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight);
@@ -255,10 +273,10 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
     {
         if (!ensure(HitResult.GetActor())) { return FVector(0, 0, 0); }
 
-        // FootOffset Z - TODO: Trigger if less than 13.5
+        // FootOffset Z
         FootSocketLocation.Z = (HitResult.Location - HitResult.TraceEnd).Size() - 15 + 13.5;
         
-        // Foot Rotations
+        // Foot Rotations - TODO : Fix
         if (Foot == 0) { 
         LeftFootRotation.Roll = UKismetMathLibrary::DegAtan2(HitResult.Normal.Y, HitResult.Normal.Z);
         LeftFootRotation.Pitch = UKismetMathLibrary::DegAtan2(HitResult.Normal.X, HitResult.Normal.Z);

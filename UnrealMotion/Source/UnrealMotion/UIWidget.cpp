@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "MainPlayerController.h"
 
+////////////////////////////////// UI Functions ///////////////////////////////////
 void UUIWidget::OnClickedStart()
 {
     AMainPlayerController* MainPlayerController = GetWorld()->GetFirstPlayerController<AMainPlayerController>();
@@ -67,4 +68,20 @@ void UUIWidget::OnClickedModeSelectShowdown()
 
     if (!ensure(MainPlayerController)) { return; }
     MainPlayerController->OnClickedModeSelectShowdown();
+}
+
+void UUIWidget::OnClickedModeReadyStart()
+{
+    AMainPlayerController* MainPlayerController = GetWorld()->GetFirstPlayerController<AMainPlayerController>();
+
+    if (!ensure(MainPlayerController)) { return; }
+    MainPlayerController->OnClickedModeReadyStart();
+}
+
+void UUIWidget::OnClickedModeReadyReturn()
+{
+    AMainPlayerController* MainPlayerController = GetWorld()->GetFirstPlayerController<AMainPlayerController>();
+
+    if (!ensure(MainPlayerController)) { return; }
+    MainPlayerController->OnClickedModeReadyReturn();
 }

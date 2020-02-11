@@ -6,6 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "MenuPawn.generated.h"
 
+class AUnrealCharacter;
+
 UCLASS()
 class UNREALMOTION_API AMenuPawn : public APawn
 {
@@ -15,6 +17,7 @@ public:
 	// Sets default values for this pawn's properties
 	AMenuPawn();
 
+	// UI Functions
 	void OnClickedStart();
 	void OnClickedReturnToTitle();
 	void OnClickedCharacterNext();
@@ -23,6 +26,15 @@ public:
 	void OnClickedModeSelectReturn();
 	void OnClickedModeSelectPractice();
 	void OnClickedModeSelectShowdown();
+	void OnClickedModeReadyStart();
+	void OnClickedModeReadyReturn();
+
+
+	// Character ID Access
+	int32 GetCharacterID();
+
+	// Set Character;
+	void SetCharacter(AUnrealCharacter* TargetCharacter);
 
 protected:
 	// Called when the game starts or when spawned
@@ -35,20 +47,26 @@ protected:
 	// virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	// Character Reference
+	AUnrealCharacter* CharacterReference = nullptr;
+
+	// Spline References
 	class USplineComponent* MainMenuSpline = nullptr;
 	class USplineComponent* CharacterSelectSpline = nullptr;
 	class USplineComponent* TargetSpline = nullptr;
 
+	// Lerp & Interp
 	void LerpAndInterp(float DeltaTime);
 	float LITime = 0;
 	float LIDuration = 0.5;
 	float InterpSpeed;
 
-	FVector TargetLocation;
+	// Menu Pawn Variables
 	float SplineLength;
 	float SplineDistance;
 	int32 CurrentState = 0;
-	int32 Character = 0;
+	int32 CharacterID = 0;
+	FVector TargetLocation;
 	FRotator LookAtRotation;
 
 };

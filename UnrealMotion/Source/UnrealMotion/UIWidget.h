@@ -15,6 +15,7 @@ class UNREALMOTION_API UUIWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	// UI Functions
 	UFUNCTION(BlueprintCallable, Category = "UI Functions")
 	void OnClickedStart();
 
@@ -39,4 +40,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI Functions")
 	void OnClickedModeSelectShowdown();
 	
+	UFUNCTION(BlueprintCallable, Category = "UI Functions")
+	void OnClickedModeReadyStart();
+	
+	UFUNCTION(BlueprintCallable, Category = "UI Functions")
+	void OnClickedModeReadyReturn();
+
 };

@@ -27,6 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
 	TSubclassOf<class UUserWidget> ModeSelectTarget;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<class UUserWidget> ModeReadyTarget;
+
 	// UI Functions
 	void OnClickedStart();
 	void OnClickedReturnToTitle();
@@ -36,6 +39,8 @@ public:
 	void OnClickedModeSelectReturn();
 	void OnClickedModeSelectPractice();
 	void OnClickedModeSelectShowdown();
+	void OnClickedModeReadyStart();
+	void OnClickedModeReadyReturn();
 
 protected:
 	virtual void BeginPlay() override;
@@ -45,8 +50,15 @@ private:
 	UUIWidget* MainMenu;
 	UUIWidget* CharacterSelect;
 	UUIWidget* ModeSelect;
+	UUIWidget* ModeReady;
 
 	// Menu Pawn
 	class AMenuPawn* MenuPawn = nullptr;
 	
+	// Character ID
+	class AUnrealCharacter* Character = nullptr;
+	FString TargetCharacter;
+
+	// Practice Area
+	void ConstructPracticeArea();
 };
