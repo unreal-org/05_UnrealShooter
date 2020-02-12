@@ -141,7 +141,7 @@ void AMainPlayerController::OnClickedModeSelectPractice()
     // Set Character Targets
     Character->SetActorTickEnabled(true);
     Character->SetCharacterGameLocation();
-    Character->SetCharacterRotation(FRotator(0, -90, 0));
+    Character->SetCharacterRotation(FRotator(0, 90, 0));
 
     // Generate Practice Area
     ConstructPracticeArea();

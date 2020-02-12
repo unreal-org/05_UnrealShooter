@@ -48,54 +48,61 @@ public:
 	UMainAnimInstance(const FObjectInitializer& ObjectInitializer);
 
 	// Body Parts
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FVector RightFootLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FVector LeftFootLocation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Targets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
 	FVector LeftKneeTargetLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Targets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
 	FVector RightKneeTargetLocation;    // world space
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FVector RightHandLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FVector LeftHandLocation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Targets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
 	FVector LeftElbowTargetLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Targets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
 	FVector RightElbowTargetLocation;    // world space
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FRotator NeckRotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FRotator Spine3Rotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FRotator Spine2Rotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Body Parts")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
 	FRotator Spine1Rotation;    // world space
 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Rotations")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Rotations")
 	FRotator RightFootRotation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Joint Rotations")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Rotations")
 	FRotator LeftFootRotation;    // world space
 
 	// IK Alpha
-	UPROPERTY(BlueprintReadOnly, Category= "IK Alpha")
+	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float LeftFootIKAlpha = 0;
-	UPROPERTY(BlueprintReadOnly, Category= "IK Alpha")
+	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float RightFootIKAlpha = 0;
-	UPROPERTY(BlueprintReadOnly, Category= "IK Alpha")
+	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float LeftHandIKAlpha = 0;
-	UPROPERTY(BlueprintReadOnly, Category= "IK Alpha")
+	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float RightHandIKAlpha = 0;
 
 
 	// Transition Events
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_IdleEntry();
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_WalkingEntry();
+
+
+	// Transition Variables
+	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
+	bool Walking = false;
 
 protected:
 	// Native initialization override point

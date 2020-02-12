@@ -32,6 +32,9 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	// References
+	class UMainAnimInstance* MainAnimInstance = nullptr;
+
 	// Character State
 	int32 CharacterState = 0;
 

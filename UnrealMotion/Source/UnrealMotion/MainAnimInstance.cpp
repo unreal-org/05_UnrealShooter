@@ -53,24 +53,29 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
     switch (MainState->GetCurrentState())
     {
         case 0: // Idle
-            LeftFootLocation = IKFootTrace(0);
-            RightFootLocation = IKFootTrace(1);
             IKHands(DeltaTimeX);
-            //SphereTrace(DeltaTimeX);
             break;
         case 1: // Walking
             break;
     }
 
+    LeftFootLocation = IKFootTrace(0);
+    RightFootLocation = IKFootTrace(1);
 }
 
 /////////////////////////////// Transition Functions //////////////////////////////
 void UMainAnimInstance::AnimNotify_IdleEntry()
 {
-    LeftFootIKAlpha = 1;
-    RightFootIKAlpha = 1;
+    LeftFootIKAlpha = 0.999;
+    RightFootIKAlpha = 0.999;
     LeftHandIKAlpha = 0;
     RightHandIKAlpha = 0;
+}
+
+void UMainAnimInstance::AnimNotify_WalkingEntry()
+{
+    LeftFootIKAlpha = .75;
+    RightFootIKAlpha = .75;
 }
 
 /////////////////////////////// Sphere Trace ////////////////////////////////
@@ -238,25 +243,27 @@ void UMainAnimInstance::TargetInterp(FVector LeftHandInterpTo, FVector RightHand
 FVector UMainAnimInstance::IKFootTrace(int32 Foot)
 {
     if (!ensure(GetSkelMeshComponent())) { return FVector(0, 0, 0); }
+    if (!ensure(GetSkelMeshComponent()->GetOwner())) { return FVector(0, 0, 0); }
+    if (!ensure(CapsuleComponent)) { return FVector(0, 0, 0); }
 
     // Determine which foot
     FName FootName;
     FVector FootSocketLocation;
-    if (Foot == 0) {
+    if (Foot == 0) {  // Left Foot
         FootName = FName(TEXT("foot_l"));
         LeftKneeTargetLocation = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("knee_target_l")));
         FootSocketLocation = GetSkelMeshComponent()->GetSocketLocation(FootName);
-    } else if (Foot == 1) { 
+    } else if (Foot == 1) {   // Right Foot
         FootName = FName(TEXT("foot_r"));
         RightKneeTargetLocation = GetSkelMeshComponent()->GetSocketLocation(FName(TEXT("knee_target_r")));
         FootSocketLocation = GetSkelMeshComponent()->GetSocketLocation(FootName);
     }
 
     // Determine Trace Start & End points
-    float CapsuleHalfHeight = 88;
-    if (CapsuleComponent) { CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight(); }
+
+    float CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight(); 
     FVector StartTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight);
-    FVector EndTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight - CapsuleHalfHeight - 15); // 15 = trace distance;
+    FVector EndTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight - CapsuleHalfHeight - 15);  // 15 = Extended Trace Distance
 
     FHitResult HitResult(ForceInit);
 
@@ -273,8 +280,11 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
     {
         if (!ensure(HitResult.GetActor())) { return FVector(0, 0, 0); }
 
-        // FootOffset Z
-        FootSocketLocation.Z = (HitResult.Location - HitResult.TraceEnd).Size() - 15 + 13.5;
+        // FootOffset Z & FootOffset at Idle
+        if ((GetSkelMeshComponent()->GetOwner()->GetVelocity()).Size() < 0.1) { FootSocketLocation.Z = 13.5; }
+        else {
+            if (FootSocketLocation.Z - HitResult.Location.Z < 13.5) { FootSocketLocation.Z = 15; }
+        }
         
         // Foot Rotations - TODO : Fix
         if (Foot == 0) { 

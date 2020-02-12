@@ -4,6 +4,7 @@
 #include "UnrealCharacter.h"
 #include "Math/Vector.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MainAnimInstance.h"
 
 // Sets default values
 AUnrealCharacter::AUnrealCharacter()
@@ -19,6 +20,7 @@ void AUnrealCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SetActorTickEnabled(false);
+	MainAnimInstance = dynamic_cast<UMainAnimInstance*>(GetMesh()->GetAnimInstance());
 	
 }
 
@@ -39,6 +41,8 @@ void AUnrealCharacter::Tick(float DeltaTime)
 
 			break;
 	}
+
+	
 }
 
 // Called to bind functionality to input
@@ -51,19 +55,34 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 // Set Character State
 void AUnrealCharacter::SetCharacterState(int32 State)
 {
+	if (!ensure(MainAnimInstance)) { return; }
+
 	CharacterState = State;
+
+	switch (State) 
+	{
+		case 0: // Trigger Transition to Idle Steady
+			if (MainAnimInstance) { MainAnimInstance->Walking = false; }
+			break;
+		case 1: // Trigger Transition to Walking
+			if (MainAnimInstance) { MainAnimInstance->Walking = true; }
+			break;
+		case 2: // Player Control
+
+			break;
+	}
 }
 
 // Move Character to Location
 void AUnrealCharacter::MoveCharacterTo(FVector SetTargetLocation)
 {
-	if (!(GetActorLocation().Equals(SetTargetLocation, 2))) {
+	if (!(GetActorLocation().Equals(SetTargetLocation, 2.5))) {
 		FVector TargetUnitDirection = UKismetMathLibrary::GetDirectionUnitVector(GetActorLocation(), SetTargetLocation);
-		AddMovementInput(TargetUnitDirection, 0.4, true);
+		AddMovementInput(TargetUnitDirection, 0.3, true);
 		return;
 	}
 	
-	CharacterState = 0;
+	SetCharacterState(0);
 }
 
 // Set Character Start Location - Moving Back to Start
@@ -85,21 +104,19 @@ void AUnrealCharacter::SetCharacterStartLocation(int32 StartLocationID)
 			break;
 	}
 
-	CharacterState = 1;
+	SetCharacterState(1);
 }
 
 // Set Character Move Location
 void AUnrealCharacter::SetCharacterGameLocation()
 {
 	TargetLocation = GameStartLocation;
-	// Trigger Transition Variable for State Machine change - Walking
-	CharacterState = 1;
+	SetCharacterState(1);
 }
 
 // Set Character Rotation
 void AUnrealCharacter::SetCharacterRotation(FRotator TargetRotation)
 {
-	// Trigger Transition Variable for State Machine change - Idle
 	LookAtRotation = TargetRotation;
 }
 

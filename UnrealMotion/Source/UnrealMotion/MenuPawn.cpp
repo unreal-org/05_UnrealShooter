@@ -69,7 +69,9 @@ void AMenuPawn::Tick(float DeltaTime)
 			break;
 		case 3: // Practice Mode & Showdown
 			if (CharacterReference) {
-				LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), CharacterReference->GetActorLocation());  // Look at Center of arena
+				FVector Target = CharacterReference->GetActorLocation();
+				Target.Z += 15;
+				LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target);  // Look at Center of arena
 			}
 			break;
     }
@@ -85,7 +87,7 @@ void AMenuPawn::LerpAndInterp(float DeltaTime)
     if (LITime < LIDuration)
     {
         LITime += DeltaTime;
-        FRotator MenuPawnRotation = FMath::Lerp(GetActorRotation(), LookAtRotation, LITime * 5);
+        FRotator MenuPawnRotation = FMath::Lerp(GetActorRotation(), LookAtRotation, LITime * 4.5);
 		FVector MenuPawnLocation = FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, InterpSpeed);
 
 		SetActorRotation(MenuPawnRotation, ETeleportType::None);
@@ -146,13 +148,13 @@ void AMenuPawn::OnClickedModeSelectReturn()
 void AMenuPawn::OnClickedModeSelectPractice()
 {
 	CurrentState = 3;
-	TargetLocation = FVector(850, 1900, 130);
+	TargetLocation = FVector(850, 1650, 135);
 }
 
 void AMenuPawn::OnClickedModeSelectShowdown()
 {
 	CurrentState = 3;
-	TargetLocation = FVector(850, 1900, 130);
+	TargetLocation = FVector(850, 1900, 135);
 }
 
 void AMenuPawn::OnClickedModeReadyStart()
