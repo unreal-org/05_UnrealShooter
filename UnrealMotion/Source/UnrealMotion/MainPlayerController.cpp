@@ -21,6 +21,7 @@ void AMainPlayerController::BeginPlay()
     CharacterSelect = CreateWidget<UUIWidget>(this, CharacterSelectTarget);
     ModeSelect = CreateWidget<UUIWidget>(this, ModeSelectTarget);
     ModeReady = CreateWidget<UUIWidget>(this, ModeReadyTarget);
+    EscapeMenu = CreateWidget<UUIWidget>(this, EscapeMenuTarget);
 
     // Add MainMenu to viewport
     if (MainMenu) { MainMenu->AddToViewport(); }
@@ -36,6 +37,7 @@ void AMainPlayerController::BeginPlay()
 			MenuPawn = Target;
 		}
 	}
+
 }
 
 ///////////////////////////////// UI Functions ////////////////////////////////////
@@ -123,7 +125,6 @@ void AMainPlayerController::OnClickedModeSelectPractice()
     if (!ensure(MenuPawn)) { return; }
 
     ModeSelect->RemoveFromViewport();
-    // Generate Target Practice Area
     MenuPawn->OnClickedModeSelectPractice();
 
     // Possess Character
@@ -142,9 +143,9 @@ void AMainPlayerController::OnClickedModeSelectPractice()
     Character->SetActorTickEnabled(true);
     Character->SetCharacterGameLocation();
     Character->SetCharacterRotation(FRotator(0, 90, 0));
+    Character->TargetState = 2;
 
-    // Generate Practice Area
-    ConstructPracticeArea();
+    ModeReady->AddToViewport();
 }
 
 void AMainPlayerController::OnClickedModeSelectShowdown()
@@ -152,7 +153,6 @@ void AMainPlayerController::OnClickedModeSelectShowdown()
     if (!ensure(MenuPawn)) { return; }
 
     ModeSelect->RemoveFromViewport();
-    // Find opponent for Network Play
     MenuPawn->OnClickedModeSelectShowdown();
 
     // Possess Character
@@ -171,6 +171,9 @@ void AMainPlayerController::OnClickedModeSelectShowdown()
     Character->SetActorTickEnabled(true);
     Character->SetCharacterGameLocation();
     Character->SetCharacterRotation(FRotator(0, -90, 0));
+    Character->TargetState = 2;
+
+    ModeReady->AddToViewport();
 
     // Find Opponent
 }
@@ -184,7 +187,7 @@ void AMainPlayerController::OnClickedModeReadyStart()
     
     // Possess Character
     Possess(Character);
-    Character->SetCharacterState(2);
+    Character->TargetState = 2;
 }
 
 void AMainPlayerController::OnClickedModeReadyReturn()
@@ -195,16 +198,37 @@ void AMainPlayerController::OnClickedModeReadyReturn()
     MenuPawn->OnClickedModeReadyReturn();
     CharacterSelect->AddToViewport();
 
-    // Zoom out Camera
+    // Return Character to start location
     Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
     Character->SetCharacterRotation(FRotator(0, 0, 0));
+    Character->TargetState = 0;
 }
 
-// Practice Area
-void AMainPlayerController::ConstructPracticeArea()
+void AMainPlayerController::OnClickedEscapeMenuReturnToTitle()
 {
-    // Construct stuff here
+    EscapeMenu->RemoveFromViewport();
+    MainMenu->AddToViewport();
 
-    // Bring up Mode Ready UI
-    ModeReady->AddToViewport();
+    MenuPawn->OnClickedEscapeMenuReturnToTitle();
+    UnPossess();
+    Possess(MenuPawn);
+
+    Character->SpawnDefaultController();
+    Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+    Character->SetCharacterRotation(FRotator(0, 0, 0));
+    Character->TargetState = 0;
+}
+
+// UI Accessors
+void AMainPlayerController::EscapeMenuPressed()
+{
+    if (!ensure(EscapeMenu)) { return; }
+
+    if (EscapeMenuOpen == false) {
+        EscapeMenu->AddToViewport();
+        EscapeMenuOpen = true;
+    } else {
+        EscapeMenu->RemoveFromViewport();
+        EscapeMenuOpen = false;
+    }
 }

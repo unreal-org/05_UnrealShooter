@@ -103,6 +103,8 @@ public:
 	// Transition Variables
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
 	bool Walking = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
+	bool Ready = false;
 
 protected:
 	// Native initialization override point

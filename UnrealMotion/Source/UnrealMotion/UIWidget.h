@@ -46,4 +46,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI Functions")
 	void OnClickedModeReadyReturn();
 
+	UFUNCTION(BlueprintCallable, Category = "UI Functions")
+	void OnClickedEscapeMenuReturnToTitle();
+
 };

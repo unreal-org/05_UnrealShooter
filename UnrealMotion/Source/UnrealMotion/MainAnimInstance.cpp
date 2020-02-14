@@ -66,8 +66,8 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
 /////////////////////////////// Transition Functions //////////////////////////////
 void UMainAnimInstance::AnimNotify_IdleEntry()
 {
-    LeftFootIKAlpha = 0.999;
-    RightFootIKAlpha = 0.999;
+    LeftFootIKAlpha = 0.99;
+    RightFootIKAlpha = 0.99;
     LeftHandIKAlpha = 0;
     RightHandIKAlpha = 0;
 }
@@ -244,7 +244,7 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
 {
     if (!ensure(GetSkelMeshComponent())) { return FVector(0, 0, 0); }
     if (!ensure(GetSkelMeshComponent()->GetOwner())) { return FVector(0, 0, 0); }
-    if (!ensure(CapsuleComponent)) { return FVector(0, 0, 0); }
+    //if (!ensure(CapsuleComponent)) { return FVector(0, 0, 0); }    // NOTE: Is apparently causing crash?
 
     // Determine which foot
     FName FootName;
@@ -260,8 +260,7 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
     }
 
     // Determine Trace Start & End points
-
-    float CapsuleHalfHeight = CapsuleComponent->GetUnscaledCapsuleHalfHeight(); 
+    float CapsuleHalfHeight = 88;    // Hard code CapsuleHalfHeight for now
     FVector StartTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight);
     FVector EndTrace = FVector(FootSocketLocation.X, FootSocketLocation.Y, CapsuleHalfHeight - CapsuleHalfHeight - 15);  // 15 = Extended Trace Distance
 

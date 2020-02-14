@@ -28,8 +28,8 @@ public:
 	void OnClickedModeSelectShowdown();
 	void OnClickedModeReadyStart();
 	void OnClickedModeReadyReturn();
-
-
+	void OnClickedEscapeMenuReturnToTitle();
+	
 	// Character ID Access
 	int32 GetCharacterID();
 

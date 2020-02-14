@@ -85,3 +85,11 @@ void UUIWidget::OnClickedModeReadyReturn()
     if (!ensure(MainPlayerController)) { return; }
     MainPlayerController->OnClickedModeReadyReturn();
 }
+
+void UUIWidget::OnClickedEscapeMenuReturnToTitle()
+{
+    AMainPlayerController* MainPlayerController = GetWorld()->GetFirstPlayerController<AMainPlayerController>();
+
+    if (!ensure(MainPlayerController)) { return; }
+    MainPlayerController->OnClickedEscapeMenuReturnToTitle();
+}

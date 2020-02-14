@@ -109,16 +109,16 @@ void AMenuPawn::SetCharacter(AUnrealCharacter* TargetCharacter)
 //////////////////////////// UI Functions ////////////////////////////////
 void AMenuPawn::OnClickedStart()
 {
-	CurrentState = 1;    // Switch state to main menu
 	TargetSpline = CharacterSelectSpline;   // Redirect TargetSpline pointer
+	CurrentState = 1;    // Switch state to main menu
 	CharacterID = 0;   // Start at Character 0
 	InterpSpeed = 10;   // Menu pawn Location InterpSpeed
 }
 
 void AMenuPawn::OnClickedReturnToTitle()
 {
-	CurrentState = 0;     // Switch state to character select
 	TargetSpline = MainMenuSpline;   // Redirect TargetSpline pointer
+	CurrentState = 0;     // Switch state to character select
 	CharacterID = 0;   // Start at Character 0
 	InterpSpeed = 3;   // Menu pawn Location InterpSpeed
 }
@@ -166,3 +166,11 @@ void AMenuPawn::OnClickedModeReadyReturn()
 {
 	CurrentState = 1;
 }
+
+void AMenuPawn::OnClickedEscapeMenuReturnToTitle()
+{
+	TargetSpline = MainMenuSpline;   // Redirect TargetSpline pointer
+	CurrentState = 0;     // Switch state to character select
+	InterpSpeed = 3;   // Menu pawn Location InterpSpeed
+}
+

@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
 	TSubclassOf<class UUserWidget> ModeReadyTarget;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<class UUserWidget> EscapeMenuTarget;
+
 	// UI Functions
 	void OnClickedStart();
 	void OnClickedReturnToTitle();
@@ -41,6 +44,10 @@ public:
 	void OnClickedModeSelectShowdown();
 	void OnClickedModeReadyStart();
 	void OnClickedModeReadyReturn();
+	void OnClickedEscapeMenuReturnToTitle();
+
+	// UI Accessors
+	void EscapeMenuPressed();
 
 protected:
 	virtual void BeginPlay() override;
@@ -51,6 +58,7 @@ private:
 	UUIWidget* CharacterSelect;
 	UUIWidget* ModeSelect;
 	UUIWidget* ModeReady;
+	UUIWidget* EscapeMenu;
 
 	// Menu Pawn
 	class AMenuPawn* MenuPawn = nullptr;
@@ -59,6 +67,6 @@ private:
 	class AUnrealCharacter* Character = nullptr;
 	FString TargetCharacter;
 
-	// Practice Area
-	void ConstructPracticeArea();
+	// Escape Menu Open
+	bool EscapeMenuOpen = false;
 };

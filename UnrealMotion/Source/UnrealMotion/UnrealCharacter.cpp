@@ -5,6 +5,7 @@
 #include "Math/Vector.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MainAnimInstance.h"
+#include "MainPlayerController.h"
 
 // Sets default values
 AUnrealCharacter::AUnrealCharacter()
@@ -32,13 +33,12 @@ void AUnrealCharacter::Tick(float DeltaTime)
 	switch (CharacterState)
 	{
 		case 0: // Idle
-			Lerp(DeltaTime);
 			break;
 		case 1: // Walking
-			MoveCharacterTo(TargetLocation);
+			MoveCharacterTo(TargetLocation, DeltaTime);
 			break;
 		case 2: // Player Control
-
+			
 			break;
 	}
 
@@ -50,6 +50,23 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	// Directional Input
+	// PlayerInputComponent->BindAxis("IntendMoveForward", this, &AHoopzCharacter::MoveForward);
+	// PlayerInputComponent->BindAxis("IntendMoveRight", this, &AHoopzCharacter::MoveRight);
+
+	// Face Buttons
+	PlayerInputComponent->BindAction("EscapeMenu", IE_Pressed, this, &AUnrealCharacter::EscapeMenu);
+	// PlayerInputComponent->BindAction("Jump", IE_Released, this, &AHoopzCharacter::JumpReleased);
+	// PlayerInputComponent->BindAction("TurnLeft", IE_Pressed, this, &AHoopzCharacter::TurnLeft);
+	// PlayerInputComponent->BindAction("TurnRight", IE_Pressed, this, &AHoopzCharacter::TurnRight);
+	// PlayerInputComponent->BindAction("DashOrShot", IE_Pressed, this, &AHoopzCharacter::DashOrShot);
+}
+
+// Input Functions
+void AUnrealCharacter::EscapeMenu()
+{
+	// Get Player Controller & Add EscapeMenu to viewport
+	if(GetController()) { Cast<AMainPlayerController>(GetController())->EscapeMenuPressed(); }
 }
 
 // Set Character State
@@ -63,26 +80,35 @@ void AUnrealCharacter::SetCharacterState(int32 State)
 	{
 		case 0: // Trigger Transition to Idle Steady
 			if (MainAnimInstance) { MainAnimInstance->Walking = false; }
+			// stop ticking
 			break;
 		case 1: // Trigger Transition to Walking
-			if (MainAnimInstance) { MainAnimInstance->Walking = true; }
+			if (MainAnimInstance) {
+				MainAnimInstance->Walking = true;
+				MainAnimInstance->Ready = false;
+			}
 			break;
 		case 2: // Player Control
-
+			if (MainAnimInstance) { MainAnimInstance->Ready = true; }
+			
 			break;
 	}
 }
 
 // Move Character to Location
-void AUnrealCharacter::MoveCharacterTo(FVector SetTargetLocation)
+void AUnrealCharacter::MoveCharacterTo(FVector SetTargetLocation, float DeltaTime)
 {
-	if (!(GetActorLocation().Equals(SetTargetLocation, 2.5))) {
+	if (!(GetActorLocation().Equals(SetTargetLocation, 3))) {
 		FVector TargetUnitDirection = UKismetMathLibrary::GetDirectionUnitVector(GetActorLocation(), SetTargetLocation);
 		AddMovementInput(TargetUnitDirection, 0.3, true);
 		return;
 	}
+	if (!(GetActorRotation().Equals(LookAtRotation, 1))) {
+		Lerp(DeltaTime);
+		return;
+	}
 	
-	SetCharacterState(0);
+	SetCharacterState(TargetState);
 }
 
 // Set Character Start Location - Moving Back to Start
@@ -126,7 +152,8 @@ void AUnrealCharacter::Lerp(float DeltaTime)
 	LITime = 0;
     if (LITime < LIDuration) {
         LITime += DeltaTime;
-        FRotator TargetRotation = FMath::Lerp(GetActorRotation(), LookAtRotation, LITime * 3);
+        FRotator TargetRotation = FMath::Lerp(GetActorRotation(), LookAtRotation, LITime * 7);
 		SetActorRotation(TargetRotation, ETeleportType::None);
     }
 }
+
