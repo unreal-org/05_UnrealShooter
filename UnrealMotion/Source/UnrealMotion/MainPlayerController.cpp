@@ -188,6 +188,9 @@ void AMainPlayerController::OnClickedModeReadyStart()
     // Possess Character
     Possess(Character);
     Character->TargetState = 2;
+
+    // Hide mouse cursor
+    bShowMouseCursor = false;
 }
 
 void AMainPlayerController::OnClickedModeReadyReturn()

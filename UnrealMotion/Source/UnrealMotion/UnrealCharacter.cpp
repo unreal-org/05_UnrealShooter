@@ -6,6 +6,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "MainAnimInstance.h"
 #include "MainPlayerController.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values
 AUnrealCharacter::AUnrealCharacter()
@@ -22,6 +23,7 @@ void AUnrealCharacter::BeginPlay()
 
 	SetActorTickEnabled(false);
 	MainAnimInstance = dynamic_cast<UMainAnimInstance*>(GetMesh()->GetAnimInstance());
+	CameraComponent = FindComponentByClass<UCameraComponent>();
 	
 }
 
@@ -38,7 +40,7 @@ void AUnrealCharacter::Tick(float DeltaTime)
 			MoveCharacterTo(TargetLocation, DeltaTime);
 			break;
 		case 2: // Player Control
-			
+			if (CameraComponent) { CameraRotationClamp(); }
 			break;
 	}
 
@@ -51,8 +53,8 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// Directional Input
-	// PlayerInputComponent->BindAxis("IntendMoveForward", this, &AHoopzCharacter::MoveForward);
-	// PlayerInputComponent->BindAxis("IntendMoveRight", this, &AHoopzCharacter::MoveRight);
+	// PlayerInputComponent->BindAxis("HorizontalAxis", this, &AUnrealCharacter::LookRight);
+	// PlayerInputComponent->BindAxis("VerticalAxis", this, &AUnrealCharacter::LookUp);
 
 	// Face Buttons
 	PlayerInputComponent->BindAction("EscapeMenu", IE_Pressed, this, &AUnrealCharacter::EscapeMenu);
@@ -66,7 +68,19 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void AUnrealCharacter::EscapeMenu()
 {
 	// Get Player Controller & Add EscapeMenu to viewport
-	if(GetController()) { Cast<AMainPlayerController>(GetController())->EscapeMenuPressed(); }
+	if (GetController()) { Cast<AMainPlayerController>(GetController())->EscapeMenuPressed(); }
+}
+
+// Camera Rotation Clamp
+void AUnrealCharacter::CameraRotationClamp()
+{
+	FRotator CameraRotation = CameraComponent->GetRelativeRotation();
+
+	CameraRotation.Pitch = FMath::ClampAngle(CameraRotation.Pitch, -CameraPitchClamp, CameraPitchClamp);
+    CameraRotation.Yaw = FMath::ClampAngle(CameraRotation.Yaw, -CameraYawClamp, CameraYawClamp);
+    CameraRotation.Roll = FMath:: ClampAngle(CameraRotation.Roll, 0, 0);
+
+	CameraComponent->SetRelativeRotation(CameraRotation, false);
 }
 
 // Set Character State

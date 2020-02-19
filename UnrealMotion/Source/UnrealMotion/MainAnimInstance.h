@@ -106,6 +106,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
 	bool Ready = false;
 
+	// Ready Pose Index
+	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
+	int32 ReadyIndex = 0;
+
 protected:
 	// Native initialization override point
 	virtual void NativeInitializeAnimation() override;

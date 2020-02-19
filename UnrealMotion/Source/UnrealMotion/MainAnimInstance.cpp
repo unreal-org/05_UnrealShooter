@@ -57,6 +57,9 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTimeX)
             break;
         case 1: // Walking
             break;
+        case 2: // Ready
+            // Spine 1 follows Camera rotation here
+            break;
     }
 
     LeftFootLocation = IKFootTrace(0);

@@ -36,6 +36,7 @@ protected:
 private:
 	// References
 	class UMainAnimInstance* MainAnimInstance = nullptr;
+	class UCameraComponent* CameraComponent = nullptr;
 
 	// Character State
 	int32 CharacterState = 0;
@@ -59,5 +60,10 @@ private:
 	void Lerp(float DeltaTime);
 	float LITime = 0;
 	float LIDuration = 0.5;
+
+	// Camera Clamp
+	void CameraRotationClamp();
+	float CameraPitchClamp = 10;
+	float CameraYawClamp = 20;
 
 };
