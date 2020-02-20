@@ -3,6 +3,9 @@
 
 #include "AimingComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/StaticMeshComponent.h"
 
 // Sets default values for this component's properties
 UAimingComponent::UAimingComponent()
@@ -31,57 +34,29 @@ void UAimingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-// Gun to Set
-void UAimingComponent::Initialize() // UGun* GunToSet
+// Ready Aim
+FVector UAimingComponent::ReadyAim(FVector HitLocation)
 {
-	// Gun = GunToSet;
-}
+	// Get Aim Direction
+	FVector OutLaunchVelocity = FVector(0, 0, 0);  
+	FVector StartLocation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketLocation(FName("Projectile"));
+	bool HaveAimSolution = UGameplayStatics::SuggestProjectileVelocity(
+			this,
+			OutLaunchVelocity,
+			StartLocation,
+			HitLocation,
+			LaunchSpeed,
+			false,  
+			0,  
+			0, 
+			ESuggestProjVelocityTraceOption::DoNotTrace 
+		);
 
-// Aim at
-void UAimingComponent::AimAt(FVector HitLocation)
-{
-	// if (!ensure(Gun)) { return; }
+	// Get & Set Aim Rotation
+	if(HaveAimSolution)
+	{	
+		FVector AimDirection = OutLaunchVelocity.GetSafeNormal();
+	}
 
-	// FVector OutLaunchVelocity = FVector(0, 0, 0);  
-	// //FVector StartLocation = Gun->GetSocketLocation(FName("Projectile"));
-	// bool bHaveAimSolution = UGameplayStatics::SuggestProjectileVelocity(
-	// 		this,
-	// 		OutLaunchVelocity,
-	// 		StartLocation,
-	// 		HitLocation,
-	// 		LaunchSpeed,
-	// 		false,  // default
-	// 		0,  // default
-	// 		0,  // default
-	// 		ESuggestProjVelocityTraceOption::DoNotTrace  // must be present - presents bug "no solution found"
-	// 	);
-
-	// if (bHaveAimSolution)
-	// {	
-	// 	AimDirection = OutLaunchVelocity.GetSafeNormal();  // Get Unit Vector in direction of Launch
-	// 	MoveBarrelTowards(AimDirection);
-	// }
-
-}
-
-
-void UAimingComponent::MoveBarrelTowards(FVector AimDirection)
-{
-	// if (!ensure(Gun)) { return; }
-
-	// work out difference between current barrel rotation and aimdirection
-	//FRotator GunRotation = Gun + Arm ->GetForwardVector().Rotation();
-	// FRotator AimAsRotator = AimDirection.Rotation();
-	// FRotator DeltaRotatorPitch = AimAsRotator - GunRotation;
-	// FRotator DeltaRotatorYaw = AimAsRotator - TurretRotation;
-	
-	// Barrel->Elevate(DeltaRotatorP.Pitch);
-	// if (FMath::Abs(DeltaRotatorY.Yaw) < 180)  // always yaw shortest way
-	// {
-	// 	Turret->Rotate(DeltaRotatorY.Yaw);
-	// }
-	// else
-	// {
-	// 	Turret->Rotate(-DeltaRotatorY.Yaw);
-	// }
+	return FVector(0, 0, 0);
 }

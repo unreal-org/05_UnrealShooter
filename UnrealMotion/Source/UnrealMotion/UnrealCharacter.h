@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "UnrealCharacter.generated.h"
 
+class UCameraComponent;
+class UAimingComponent;
+
 UCLASS()
 class UNREALMOTION_API AUnrealCharacter : public ACharacter
 {
@@ -21,7 +24,12 @@ public:
 	void SetCharacterRotation(FRotator TargetRotation);
 	void SetCharacterState(int32 State);
 
+	// For Delayed State Change
 	int32 TargetState = 0;
+
+	// Accessors
+	FRotator GetCameraRotation();
+	FRotator GetHandOffsetRotation();
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,7 +44,7 @@ protected:
 private:
 	// References
 	class UMainAnimInstance* MainAnimInstance = nullptr;
-	class UCameraComponent* CameraComponent = nullptr;
+	UAimingComponent* AimingComponent = nullptr;
 
 	// Character State
 	int32 CharacterState = 0;
@@ -63,7 +71,19 @@ private:
 
 	// Camera Clamp
 	void CameraRotationClamp();
+	FRotator CameraRotation;
 	float CameraPitchClamp = 10;
-	float CameraYawClamp = 20;
+	float CameraYawClamp = 15;
+
+	// Draw
+	bool Drawn = false;
+	void Draw();
+
+	// Get Hit Location
+	FVector HitLocation;
+	FVector AimDirection;
+	FRotator HandOffsetRotation;
+	bool GetHitLocation(FVector& HitLocation);
+	void AimAt(FVector TargetDirection);
 
 };

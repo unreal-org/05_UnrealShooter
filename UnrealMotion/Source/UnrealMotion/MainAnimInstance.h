@@ -11,30 +11,6 @@
 class UCapsuleComponent;
 class AActor;
 
-USTRUCT()
-struct FJoint
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	FName JointName;
-
-	UPROPERTY()
-	FRotator TargetJointRotation;
-
-	UPROPERTY()
-	FRotator ClampRotation;
-
-	FJoint() {}
-
-	FJoint(FName Name, FRotator Joint, FRotator Clamp)
-	{
-		JointName = Name;
-		TargetJointRotation = Joint;
-		ClampRotation = Clamp;
-	}
-};
-
 /**
  * 
  */
@@ -56,49 +32,28 @@ public:
 	FVector LeftKneeTargetLocation;   // world space
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
 	FVector RightKneeTargetLocation;    // world space
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FVector RightHandLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FVector LeftHandLocation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
-	FVector LeftElbowTargetLocation;   // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Targets")
-	FVector RightElbowTargetLocation;    // world space
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FRotator NeckRotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FRotator Spine3Rotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FRotator Spine2Rotation;    // world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
-	FRotator Spine1Rotation;    // world space
-
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Rotations")
 	FRotator RightFootRotation;   // world space
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joint Rotations")
 	FRotator LeftFootRotation;    // world space
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
+	FRotator RightHandRotation;   // world space
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body Parts")
+	FRotator Spine3Rotation;    // world space
 
 	// IK Alpha
 	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float LeftFootIKAlpha = 0;
 	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
 	float RightFootIKAlpha = 0;
-	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
-	float LeftHandIKAlpha = 0;
-	UPROPERTY(BlueprintReadOnly, Category = "IK Alpha")
-	float RightHandIKAlpha = 0;
-
 
 	// Transition Events
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_IdleEntry();
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_WalkingEntry();
-
 
 	// Transition Variables
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
@@ -118,44 +73,23 @@ protected:
 	virtual void NativeUpdateAnimation(float DeltaTimeX) override;
 
 private:
-	// Capsule Component
-	UCapsuleComponent* CapsuleComponent = nullptr;
+	// Character Reference
+	class AUnrealCharacter* UnrealCharacter = nullptr;
 
 	// State Machine
 	FAnimNode_StateMachine *MainState;
 
 	// Lerp
-	void TargetLerp(float DeltaTimeX, float Beta);
+	void TargetLerp(float DeltaTimeX);
 	float LerpTime = 0;
 	float LerpDuration = 0.3;
 
 	// Clamp
 	FRotator RotatorClamp(FRotator TargetRotator, FRotator RotatorClamp);
-	FRotator RotationAdjust(TArray<FJoint> BoneChain, int i, FRotator InitialTargetRotation);
-	TArray<FJoint> Spine;
-
-	// Head Trace
-	void SphereTrace(float DeltaTimeX);
-	TArray<AActor*> IgnoredActors;
-	FRotator TargetNeckRotation;
-
+	
 	// Foot Trace
 	FName TraceTag = FName(TEXT("TraceTag"));
 	FCollisionQueryParams TraceParameters;
 	FVector IKFootTrace(int32 Foot);
 
-	// Hand Trace
-	void IKHands(float DeltaTimeX);
-	void TargetInterp(FVector LeftHandInterpTo, FVector RightHandInterpTo, float DeltaTimeX);
-	float InterpTime = 0;
-	float InterpDuration = 0.3;
-	float InterpSpeed = 2;
-
-	// Threat Variable
-	float Threat = 1;
-	float ThreatMin = 1;
-	float ThreatMax = 100;
-	float ThreatThreshold = 150;
-	float ThreatSensitivity = 20;
-	FVector ThreatVector;
 };

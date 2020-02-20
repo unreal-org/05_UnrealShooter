@@ -16,11 +16,7 @@ public:
 	// Sets default values for this component's properties
 	UAimingComponent();
 
-	// set turret & barrel reference
-	UFUNCTION(BluePrintCallable, Category = "Setup")      
-	void Initialize(); // UGun* GunToSet
-
-	void AimAt(FVector HitLocation);
+	FVector ReadyAim(FVector HitLocation);
 
 protected:
 	// Called when the game starts
@@ -30,14 +26,7 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:	
-	// Gun to Set
-	// UGun* Gun = nullptr;	
-
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float LaunchSpeed = 1500;     // meters per second
-
-	void MoveBarrelTowards(FVector AimDirection);
-
-	FVector AimDirection;
+	float LaunchSpeed = 1500;    // meters per second
 	
 };
