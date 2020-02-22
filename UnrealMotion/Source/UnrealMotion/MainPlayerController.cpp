@@ -230,8 +230,10 @@ void AMainPlayerController::EscapeMenuPressed()
     if (EscapeMenuOpen == false) {
         EscapeMenu->AddToViewport();
         EscapeMenuOpen = true;
+        bShowMouseCursor = true;
     } else {
         EscapeMenu->RemoveFromViewport();
         EscapeMenuOpen = false;
+        bShowMouseCursor = false;
     }
 }

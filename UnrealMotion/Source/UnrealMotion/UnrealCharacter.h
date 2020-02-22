@@ -28,8 +28,8 @@ public:
 	int32 TargetState = 0;
 
 	// Accessors
-	FRotator GetCameraRotation();
-	FRotator GetHandOffsetRotation();
+	// FRotator GetCameraRotation();
+	// FRotator GetHandOffsetRotation();
 
 protected:
 	// Called when the game starts or when spawned
@@ -58,7 +58,9 @@ private:
 
 	// Input Functions
 	void EscapeMenu();
-	
+	void Shoot();
+	void Draw();
+
 	// Move Character to Location
 	FVector TargetLocation;
 	void MoveCharacterTo(FVector SetTargetLocation, float DeltaTime);
@@ -77,13 +79,13 @@ private:
 
 	// Draw
 	bool Drawn = false;
-	void Draw();
+	void GunLerp(float DeltaTime);
 
 	// Get Hit Location
 	FVector HitLocation;
 	FVector AimDirection;
 	FRotator HandOffsetRotation;
-	bool GetHitLocation(FVector& HitLocation);
-	void AimAt(FVector TargetDirection);
+	bool GetHitLocation(FVector& TargetHitLocation);
+	//void AimAt(FVector TargetDirection);
 
 };

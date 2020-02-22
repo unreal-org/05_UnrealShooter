@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "AimingComponent.generated.h"
 
+class ABullet;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UNREALMOTION_API UAimingComponent : public UActorComponent
@@ -18,6 +19,9 @@ public:
 
 	FVector ReadyAim(FVector HitLocation);
 
+	UFUNCTION(BluePrintCallable, Category = "Firing")
+	void Fire();
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -27,6 +31,9 @@ protected:
 
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float LaunchSpeed = 1500;    // meters per second
+	float LaunchSpeed = 10000;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Setup")
+	TSubclassOf<ABullet> Bullet_BP;  
 	
 };

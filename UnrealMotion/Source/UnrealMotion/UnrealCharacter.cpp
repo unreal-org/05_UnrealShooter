@@ -43,9 +43,12 @@ void AUnrealCharacter::Tick(float DeltaTime)
 			break;
 		case 2: // Player Control
 			CameraRotationClamp();
-			GetHitLocation(HitLocation);  	 // Get HitLocation
-			if(AimingComponent) { AimDirection = AimingComponent->ReadyAim(HitLocation); } 	 // Get AimDirection using ReadyAim with HitLocation using AimingComponent
-			AimAt(AimDirection);   	// Set HandOffsetRotation using AimAt with AimDirection
+			if (Drawn == true) {
+				if (GetHitLocation(HitLocation)) {  	 // Get HitLocation
+					if (AimingComponent) { AimDirection = AimingComponent->ReadyAim(HitLocation); } 	 // Get AimDirection using ReadyAim with HitLocation using AimingComponent
+					GunLerp(DeltaTime);
+				}
+			}
 			break;
 	}
 }
@@ -62,20 +65,25 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	// Face Buttons
 	PlayerInputComponent->BindAction("EscapeMenu", IE_Pressed, this, &AUnrealCharacter::EscapeMenu);
 	PlayerInputComponent->BindAction("Draw", IE_Pressed, this, &AUnrealCharacter::Draw);
+	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AUnrealCharacter::Shoot);
 }
 
 // Get Hit Location in World
-bool AUnrealCharacter::GetHitLocation(FVector& HitLocation)
+bool AUnrealCharacter::GetHitLocation(FVector& TargetHitLocation)
 {
+	if (!ensure(GetController())) { return false; }
+
+	AMainPlayerController* MainPlayerController = Cast<AMainPlayerController>(GetController());
+
 	// Get Viewport Size
 	int32 ViewportSizeX, ViewportSizeY;
-	Cast<AMainPlayerController>(GetController())->GetViewportSize(ViewportSizeX, ViewportSizeY);
+	if (MainPlayerController) { MainPlayerController->GetViewportSize(ViewportSizeX, ViewportSizeY); }
 	FVector2D ScreenLocation = FVector2D(ViewportSizeX * 0.5, ViewportSizeY * 0.45);
 
 	// De-project
 	FVector HitWorldLocation;
     FVector HitWorldDirection;
-	Cast<AMainPlayerController>(GetController())->DeprojectScreenPositionToWorld(ScreenLocation.X, ScreenLocation.Y, HitWorldLocation, HitWorldDirection);
+	if (MainPlayerController) { MainPlayerController->DeprojectScreenPositionToWorld(ScreenLocation.X, ScreenLocation.Y, HitWorldLocation, HitWorldDirection); }
 
 	// Get Hit Location
 	FHitResult HitResult;
@@ -89,27 +97,25 @@ bool AUnrealCharacter::GetHitLocation(FVector& HitLocation)
         CameraLookLocation,
         ECollisionChannel::ECC_Visibility))
     {
-        HitLocation = HitResult.Location;
+        TargetHitLocation = HitResult.Location;
         return true;
     }
 
-	HitLocation = FVector(0, 0, 0);
+	TargetHitLocation = FVector(0, 0, 0);
     return false;
 }
 
 // Get Hand OffsetRotation
-void AUnrealCharacter::AimAt(FVector TargetDirection)
-{
-	// Get Hand rotation in World rotation
-	FRotator WorldHandRotation = GetMesh()->GetSocketRotation(FName(TEXT("hand_r")));
+// void AUnrealCharacter::AimAt(FVector TargetDirection)
+// {
+// 	// Match to Hand Rotation
+// 	FRotator AimAsRotator = TargetDirection.Rotation();
+// 	AimAsRotator.Pitch = -AimAsRotator.Pitch;
+// 	AimAsRotator.Yaw -= 90;
 
-	// Get difference between AimDirection rotation & hand rotation
-	FRotator AimAsRotator = TargetDirection.Rotation();
-	FRotator Difference = AimAsRotator - WorldHandRotation;
-
-	// Set HandOffsetRotation to be added to hand in MainAnimInstance
-	HandOffsetRotation = Difference;
-}
+// 	// Set HandOffsetRotation to be replaced in MainAnimInstance
+// 	HandOffsetRotation = AimAsRotator;
+// }
 
 // Input Functions
 void AUnrealCharacter::EscapeMenu()
@@ -121,6 +127,7 @@ void AUnrealCharacter::EscapeMenu()
 void AUnrealCharacter::Draw()
 {
 	if (!ensure(MainAnimInstance)) { return; }
+	if (CharacterState != 2) { return; }
 
 	// Change Pose Index & Drawn bool
 	if (Drawn == false) {
@@ -132,18 +139,26 @@ void AUnrealCharacter::Draw()
 	}
 }
 
-// Get Camera Rotation
-FRotator AUnrealCharacter::GetCameraRotation()
+void AUnrealCharacter::Shoot()
 {
-	FRotator ReturnRotation = CameraRotation + FRotator(6, 0, 0);
-	return ReturnRotation;
+	// Get Player Controller & Add EscapeMenu to viewport
+	if (AimingComponent) {
+		if (Drawn == true) { AimingComponent->Fire(); }
+	}
 }
 
+// Get Camera Rotation
+// FRotator AUnrealCharacter::GetCameraRotation()
+// {
+// 	FRotator ReturnRotation = CameraRotation + FRotator(6, 0, 0);
+// 	return ReturnRotation;
+// }
+
 // Get Hand Offset Rotation
-FRotator AUnrealCharacter::GetHandOffsetRotation()
-{
-	return HandOffsetRotation;
-}
+// FRotator AUnrealCharacter::GetHandOffsetRotation()
+// {
+// 	return HandOffsetRotation;
+// }
 
 // Camera Rotation Clamp
 void AUnrealCharacter::CameraRotationClamp()
@@ -244,6 +259,20 @@ void AUnrealCharacter::Lerp(float DeltaTime)
         LITime += DeltaTime;
         FRotator TargetRotation = FMath::Lerp(GetActorRotation(), LookAtRotation, LITime * 7);
 		SetActorRotation(TargetRotation, ETeleportType::None);
+    }
+}
+
+// Character Lerp
+void AUnrealCharacter::GunLerp(float DeltaTime)
+{
+	UStaticMeshComponent* Gun = FindComponentByClass<UStaticMeshComponent>();
+	if (!ensure(Gun)) { return; }
+
+	LITime = 0;
+    if (LITime < LIDuration) {
+        LITime += DeltaTime;
+        FRotator TargetRotation = FMath::Lerp(Gun->GetComponentRotation(), AimDirection.Rotation(), LITime);
+		Gun->SetWorldRotation(AimDirection.Rotation(), false);
     }
 }
 

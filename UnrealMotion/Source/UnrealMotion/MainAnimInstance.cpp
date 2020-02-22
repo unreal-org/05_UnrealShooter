@@ -2,13 +2,10 @@
 
 #include "MainAnimInstance.h"
 #include "Animation/AnimNode_StateMachine.h"
-#include "Components/CapsuleComponent.h"
-#include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/EngineTypes.h"
 #include "EngineUtils.h"
-#include "Containers/Array.h"
-#include "UnrealCharacter.h"
+#include "Camera/CameraComponent.h"
 
 ///////////////////////////////// Constructors ////////////////////////////////////
 UMainAnimInstance::UMainAnimInstance(const FObjectInitializer &ObjectInitializer)
@@ -25,7 +22,7 @@ void UMainAnimInstance::NativeInitializeAnimation()
 
     // Get State
     MainState = GetStateMachineInstanceFromName(FName(TEXT("MainState")));
-    UnrealCharacter = Cast<AUnrealCharacter>(GetSkelMeshComponent()->GetOwner());
+    // UnrealCharacter = Cast<AUnrealCharacter>(GetSkelMeshComponent()->GetOwner());
 
     // IK Foot Trace parameters
     TraceParameters = FCollisionQueryParams(TraceTag, false);
@@ -65,22 +62,23 @@ void UMainAnimInstance::AnimNotify_IdleEntry()
 
 void UMainAnimInstance::AnimNotify_WalkingEntry()
 {
-
+    LeftFootIKAlpha = 0.75;
+    RightFootIKAlpha = 0.75;
 }
 
 void UMainAnimInstance::TargetLerp(float DeltaTimeX)
 {
-    if (!ensure(UnrealCharacter)) { return; }
+    if (!ensure(GetSkelMeshComponent()->GetOwner())) { return; }
 
-    FRotator TargetSpine3Rotation = UnrealCharacter->GetCameraRotation();
-    FRotator TargetHandRotation = UnrealCharacter->GetHandOffsetRotation();
+    FRotator TargetSpine3Rotation = GetSkelMeshComponent()->GetOwner()->FindComponentByClass<UCameraComponent>()->GetRelativeRotation() + FRotator(6, 0, 0);
+    // FRotator TargetHandRotation = UnrealCharacter->GetHandOffsetRotation();
     
     LerpTime = 0;
     if (LerpTime < LerpDuration)
     {
         LerpTime += DeltaTimeX;
         Spine3Rotation = FMath::Lerp(Spine3Rotation, TargetSpine3Rotation, LerpTime);
-        RightHandRotation = FMath::Lerp(RightHandRotation, TargetHandRotation, LerpTime);
+        //RightHandRotation = FMath::Lerp(RightHandRotation, TargetHandRotation, LerpTime);
     }
 }
 

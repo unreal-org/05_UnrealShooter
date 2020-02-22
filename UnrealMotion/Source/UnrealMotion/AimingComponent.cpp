@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/StaticMeshComponent.h"
+#include "Bullet.h"
+#include "Engine/World.h"
 
 // Sets default values for this component's properties
 UAimingComponent::UAimingComponent()
@@ -40,6 +42,7 @@ FVector UAimingComponent::ReadyAim(FVector HitLocation)
 	// Get Aim Direction
 	FVector OutLaunchVelocity = FVector(0, 0, 0);  
 	FVector StartLocation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketLocation(FName("Projectile"));
+
 	bool HaveAimSolution = UGameplayStatics::SuggestProjectileVelocity(
 			this,
 			OutLaunchVelocity,
@@ -52,11 +55,24 @@ FVector UAimingComponent::ReadyAim(FVector HitLocation)
 			ESuggestProjVelocityTraceOption::DoNotTrace 
 		);
 
+
 	// Get & Set Aim Rotation
 	if(HaveAimSolution)
 	{	
 		FVector AimDirection = OutLaunchVelocity.GetSafeNormal();
+		return AimDirection;
 	}
 
 	return FVector(0, 0, 0);
+}
+
+
+void UAimingComponent::Fire()
+{
+	// Spawn bullet at barrel firing socket
+	FVector SpawnLocation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketLocation(FName("Projectile"));
+	FRotator SpawnRotation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketRotation(FName("Projectile"));
+	ABullet* Bullet = GetWorld()->SpawnActor<ABullet>(Bullet_BP, SpawnLocation, SpawnRotation);
+
+	Bullet->LaunchProjectile(LaunchSpeed);
 }

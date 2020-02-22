@@ -8,9 +8,6 @@
 #include "Animation/AnimInstance.h"
 #include "MainAnimInstance.generated.h"
 
-class UCapsuleComponent;
-class AActor;
-
 /**
  * 
  */
@@ -74,7 +71,7 @@ protected:
 
 private:
 	// Character Reference
-	class AUnrealCharacter* UnrealCharacter = nullptr;
+	//class AUnrealCharacter* UnrealCharacter = nullptr;
 
 	// State Machine
 	FAnimNode_StateMachine *MainState;
