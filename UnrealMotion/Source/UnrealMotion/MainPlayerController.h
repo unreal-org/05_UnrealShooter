@@ -19,19 +19,22 @@ class UNREALMOTION_API AMainPlayerController : public APlayerController
 public:
 	// UI Widget Setters
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> MainMenuTarget;
+	TSubclassOf<UUserWidget> MainMenuTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> CharacterSelectTarget;
+	TSubclassOf<UUserWidget> CharacterSelectTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> ModeSelectTarget;
+	TSubclassOf<UUserWidget> ModeSelectTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> ModeReadyTarget;
+	TSubclassOf<UUserWidget> ModeReadyTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> EscapeMenuTarget;
+	TSubclassOf<UUserWidget> EscapeMenuTarget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<class UCameraShake> RecoilTarget;
 
 	// UI Functions
 	void OnClickedStart();
@@ -48,6 +51,9 @@ public:
 
 	// UI Accessors
 	void EscapeMenuPressed();
+
+	// Camera Shake
+	void CameraShake();
 
 protected:
 	virtual void BeginPlay() override;

@@ -66,6 +66,7 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("EscapeMenu", IE_Pressed, this, &AUnrealCharacter::EscapeMenu);
 	PlayerInputComponent->BindAction("Draw", IE_Pressed, this, &AUnrealCharacter::Draw);
 	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AUnrealCharacter::Shoot);
+	PlayerInputComponent->BindAction("Load", IE_Pressed, this, &AUnrealCharacter::Load);
 }
 
 // Get Hit Location in World
@@ -143,7 +144,22 @@ void AUnrealCharacter::Shoot()
 {
 	// Get Player Controller & Add EscapeMenu to viewport
 	if (AimingComponent) {
-		if (Drawn == true) { AimingComponent->Fire(); }
+		if (Drawn == true && Loaded == true) {
+			Loaded = false;
+			AimingComponent->Fire();
+			Cast<AMainPlayerController>(GetController())->CameraShake();
+			CameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
+			FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CameraRotation + FRotator(5, 0, 0), false);
+		}
+	}
+}
+
+void AUnrealCharacter::Load()
+{
+	if (Drawn == true && Loaded == false) {
+		// Play Load Slot Montage
+		if (MainAnimInstance) { MainAnimInstance->PlayLoadMontage(); }
+		Loaded = true;
 	}
 }
 

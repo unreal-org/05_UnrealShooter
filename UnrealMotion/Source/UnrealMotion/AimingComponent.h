@@ -31,9 +31,9 @@ protected:
 
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float LaunchSpeed = 10000;
+	float LaunchSpeed = 12500;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
-	TSubclassOf<ABullet> Bullet_BP;  
+	TSubclassOf<ABullet> BulletTarget;  
 	
 };

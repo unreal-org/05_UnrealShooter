@@ -6,6 +6,7 @@
 #include "Engine/EngineTypes.h"
 #include "EngineUtils.h"
 #include "Camera/CameraComponent.h"
+#include "Animation/AnimMontage.h"
 
 ///////////////////////////////// Constructors ////////////////////////////////////
 UMainAnimInstance::UMainAnimInstance(const FObjectInitializer &ObjectInitializer)
@@ -66,6 +67,15 @@ void UMainAnimInstance::AnimNotify_WalkingEntry()
     RightFootIKAlpha = 0.75;
 }
 
+// void UMainAnimInstance::AnimNotify_ReadyEntry()
+// {}
+
+void UMainAnimInstance::SetLoadMontage(UAnimMontage* LoadMontageTarget)
+{
+    LoadMontage = LoadMontageTarget;
+}
+
+// Spine 3 Lerp
 void UMainAnimInstance::TargetLerp(float DeltaTimeX)
 {
     if (!ensure(GetSkelMeshComponent()->GetOwner())) { return; }
@@ -150,4 +160,20 @@ FVector UMainAnimInstance::IKFootTrace(int32 Foot)
     }
     
     return FootSocketLocation;  // else - don't offset
+}
+
+// Play Load Montage
+void UMainAnimInstance::PlayLoadMontage()
+{
+    if (LoadMontage) {
+        if (Montage_IsPlaying(LoadMontage) == false) {
+            Montage_Play(
+                LoadMontage,
+                1.5,
+                EMontagePlayReturnType::MontageLength,
+                0,
+                false
+            );
+        }
+    }
 }

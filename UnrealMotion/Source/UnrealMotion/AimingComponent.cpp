@@ -72,7 +72,7 @@ void UAimingComponent::Fire()
 	// Spawn bullet at barrel firing socket
 	FVector SpawnLocation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketLocation(FName("Projectile"));
 	FRotator SpawnRotation = GetOwner()->FindComponentByClass<UStaticMeshComponent>()->GetSocketRotation(FName("Projectile"));
-	ABullet* Bullet = GetWorld()->SpawnActor<ABullet>(Bullet_BP, SpawnLocation, SpawnRotation);
+	ABullet* Bullet = GetWorld()->SpawnActor<ABullet>(BulletTarget, SpawnLocation, SpawnRotation);
 
 	Bullet->LaunchProjectile(LaunchSpeed);
 }

@@ -8,6 +8,8 @@
 #include "Animation/AnimInstance.h"
 #include "MainAnimInstance.generated.h"
 
+class UAnimMontage;
+
 /**
  * 
  */
@@ -51,6 +53,8 @@ public:
 	void AnimNotify_IdleEntry();
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_WalkingEntry();
+	// UFUNCTION(BlueprintCallable)
+	// void AnimNotify_ReadyEntry();
 
 	// Transition Variables
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
@@ -61,6 +65,15 @@ public:
 	// Ready Pose Index
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
 	int32 ReadyIndex = 0;
+
+	// Load Shot
+	void PlayLoadMontage();
+
+	// Montage
+	UPROPERTY(EditAnywhere, Category= "Montage Reference")
+	UAnimMontage* LoadMontage;
+	UFUNCTION(BlueprintCallable)
+	void SetLoadMontage(UAnimMontage* LoadMontageTarget);
 
 protected:
 	// Native initialization override point

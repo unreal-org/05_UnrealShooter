@@ -27,6 +27,10 @@ public:
 	// For Delayed State Change
 	int32 TargetState = 0;
 
+	// Montage
+	// UPROPERTY(EditAnywhere, Category= "Montage Reference")
+	// TSubclassOf<UAnimMontage> LoadMontage;
+
 	// Accessors
 	// FRotator GetCameraRotation();
 	// FRotator GetHandOffsetRotation();
@@ -60,6 +64,7 @@ private:
 	void EscapeMenu();
 	void Shoot();
 	void Draw();
+	void Load();
 
 	// Move Character to Location
 	FVector TargetLocation;
@@ -79,6 +84,7 @@ private:
 
 	// Draw
 	bool Drawn = false;
+	bool Loaded = false;
 	void GunLerp(float DeltaTime);
 
 	// Get Hit Location

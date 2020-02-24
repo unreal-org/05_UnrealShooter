@@ -237,3 +237,14 @@ void AMainPlayerController::EscapeMenuPressed()
         bShowMouseCursor = false;
     }
 }
+
+// Camera Shake
+void AMainPlayerController::CameraShake()
+{
+    ClientPlayCameraShake(
+        RecoilTarget,
+        3,    // intensity
+        ECameraAnimPlaySpace::CameraLocal,
+        FRotator(0, 0, 0)
+    );
+}
