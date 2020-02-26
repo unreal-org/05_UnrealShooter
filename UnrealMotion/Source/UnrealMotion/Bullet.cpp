@@ -72,9 +72,9 @@ void ABullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 		this,
 		10,
 		GetActorLocation(),
-		ExplosionForce->Radius,   // for consistency
+		ExplosionForce->Radius,   
 		UDamageType::StaticClass(),
-		TArray<AActor*>()  // damage all actors
+		TArray<AActor*>()  // Empty array
 	);
 
 	// Bullet clean-up

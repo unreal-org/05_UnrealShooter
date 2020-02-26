@@ -27,14 +27,6 @@ public:
 	// For Delayed State Change
 	int32 TargetState = 0;
 
-	// Montage
-	// UPROPERTY(EditAnywhere, Category= "Montage Reference")
-	// TSubclassOf<UAnimMontage> LoadMontage;
-
-	// Accessors
-	// FRotator GetCameraRotation();
-	// FRotator GetHandOffsetRotation();
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -54,10 +46,10 @@ private:
 	int32 CharacterState = 0;
 
 	// Locations
-	FVector StartLocation_0 = FVector(225, 1350, 90.15);
-	FVector StartLocation_1 = FVector(225, 1150, 90.15);
-	FVector StartLocation_2 = FVector(225, 950, 90.15);
-	FVector StartLocation_3 = FVector(225, 750, 90.15);
+	FVector StartLocation_0 = FVector(100, 1350, 90.15);
+	FVector StartLocation_1 = FVector(100, 1150, 90.15);
+	FVector StartLocation_2 = FVector(100, 950, 90.15);
+	FVector StartLocation_3 = FVector(100, 750, 90.15);
 	FVector GameStartLocation = FVector(851, 1800, 90);
 
 	// Input Functions
@@ -65,6 +57,7 @@ private:
 	void Shoot();
 	void Draw();
 	void Load();
+	void ResetTargets();
 
 	// Move Character to Location
 	FVector TargetLocation;
@@ -80,7 +73,7 @@ private:
 	void CameraRotationClamp();
 	FRotator CameraRotation;
 	float CameraPitchClamp = 10;
-	float CameraYawClamp = 15;
+	float CameraYawClamp = 25;
 
 	// Draw
 	bool Drawn = false;
@@ -92,6 +85,9 @@ private:
 	FVector AimDirection;
 	FRotator HandOffsetRotation;
 	bool GetHitLocation(FVector& TargetHitLocation);
-	//void AimAt(FVector TargetDirection);
+
+	// On Mesh Hit
+	UFUNCTION()
+	void OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
 };

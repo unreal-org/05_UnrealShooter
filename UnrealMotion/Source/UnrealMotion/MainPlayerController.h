@@ -7,6 +7,7 @@
 #include "MainPlayerController.generated.h"
 
 class UUIWidget;
+class AStaticMeshActor;
 
 /**
  * 
@@ -51,6 +52,8 @@ public:
 
 	// UI Accessors
 	void EscapeMenuPressed();
+	int32 GetMode();
+	void ResetTargets();
 
 	// Camera Shake
 	void CameraShake();
@@ -66,6 +69,10 @@ private:
 	UUIWidget* ModeReady;
 	UUIWidget* EscapeMenu;
 
+	// Practice Target Reference Array
+	TArray<AStaticMeshActor*> PracticeTargets;
+	TArray<FVector> PracticeTargetLocations;
+
 	// Menu Pawn
 	class AMenuPawn* MenuPawn = nullptr;
 	
@@ -75,4 +82,7 @@ private:
 
 	// Escape Menu Open
 	bool EscapeMenuOpen = false;
+
+	// Mode
+	int32 Mode = 0;
 };

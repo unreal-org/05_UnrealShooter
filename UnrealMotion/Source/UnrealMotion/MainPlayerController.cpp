@@ -7,6 +7,8 @@
 #include "UIWidget.h"
 #include "MenuPawn.h"
 #include "UnrealCharacter.h"
+#include "Engine/StaticMeshActor.h"
+#include "Containers/UnrealString.h"
 
 void AMainPlayerController::BeginPlay()
 {
@@ -38,29 +40,43 @@ void AMainPlayerController::BeginPlay()
 		}
 	}
 
+    // Get Practice Target References
+    FString PracticeTarget = FString("PracticeTarget_BP");
+    const TCHAR* Substring = *PracticeTarget;
+    for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+	{
+		AStaticMeshActor* Target = *It;
+		if (Target && Target->GetName().Contains(Substring, ESearchCase::IgnoreCase, ESearchDir::FromStart)) {
+			PracticeTargets.Add(Target);
+            PracticeTargetLocations.Add(Target->GetActorLocation());
+		}
+	}
 }
 
 ///////////////////////////////// UI Functions ////////////////////////////////////
 void AMainPlayerController::OnClickedStart()
 {
     if (!ensure(MenuPawn)) { return; }
-
-    MainMenu->RemoveFromViewport();
-    CharacterSelect->AddToViewport();
-    
-    // Set MenuPawn's target spline to CharacterSelectSpline - Spline point 0
-    MenuPawn->OnClickedStart();
+    if (CharacterSelect) {
+        MainMenu->RemoveFromViewport();
+        CharacterSelect->AddToViewport();
+        
+        // Set MenuPawn's target spline to CharacterSelectSpline - Spline point 0
+        MenuPawn->OnClickedStart();
+    }
 }
 
 void AMainPlayerController::OnClickedReturnToTitle()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    CharacterSelect->RemoveFromViewport();
-    MainMenu->AddToViewport();
+    if (MainMenu) {
+        CharacterSelect->RemoveFromViewport();
+        MainMenu->AddToViewport();
 
-    // Set MenuPawn's target spline to MainMenuSpline
-    MenuPawn->OnClickedReturnToTitle();
+        // Set MenuPawn's target spline to MainMenuSpline
+        MenuPawn->OnClickedReturnToTitle();
+    }
 }
 
 void AMainPlayerController::OnClickedCharacterNext()
@@ -83,7 +99,7 @@ void AMainPlayerController::OnClickedCharacterConfirm()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    if (MenuPawn) {
+    if (ModeSelect) {
         CharacterSelect->RemoveFromViewport();
         ModeSelect->AddToViewport();
 
@@ -113,69 +129,79 @@ void AMainPlayerController::OnClickedModeSelectReturn()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    ModeSelect->RemoveFromViewport();
-    CharacterSelect->AddToViewport();
+    if (CharacterSelect) {
+        ModeSelect->RemoveFromViewport();
+        CharacterSelect->AddToViewport();
 
-    // Zoom out Camera
-    MenuPawn->OnClickedModeSelectReturn();
+        // Zoom out Camera
+        MenuPawn->OnClickedModeSelectReturn();
+    }
 }
 
 void AMainPlayerController::OnClickedModeSelectPractice()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    ModeSelect->RemoveFromViewport();
-    MenuPawn->OnClickedModeSelectPractice();
+    if (ModeReady) {
+        Mode = 1;
 
-    // Possess Character
-	for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
-	{
-		class AUnrealCharacter* Target = *It;
-		if (Target && Target->GetName() == TargetCharacter) {
-			Character = Target;
-		}
-	}
+        ModeSelect->RemoveFromViewport();
+        MenuPawn->OnClickedModeSelectPractice();
 
-    // Set Menu Pawn Targets
-    MenuPawn->SetCharacter(Character);
+        // Possess Character
+        for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
+        {
+            class AUnrealCharacter* Target = *It;
+            if (Target && Target->GetName() == TargetCharacter) {
+                Character = Target;
+            }
+        }
 
-    // Set Character Targets
-    Character->SetActorTickEnabled(true);
-    Character->SetCharacterGameLocation();
-    Character->SetCharacterRotation(FRotator(0, 90, 0));
-    Character->TargetState = 2;
+        // Set Menu Pawn Targets
+        MenuPawn->SetCharacter(Character);
 
-    ModeReady->AddToViewport();
+        // Set Character Targets
+        Character->SetActorTickEnabled(true);
+        Character->SetCharacterGameLocation();
+        Character->SetCharacterRotation(FRotator(0, 90, 0));
+        Character->TargetState = 2;
+
+        ModeReady->AddToViewport();
+    }
 }
 
 void AMainPlayerController::OnClickedModeSelectShowdown()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    ModeSelect->RemoveFromViewport();
-    MenuPawn->OnClickedModeSelectShowdown();
+    if (ModeReady) {
+        Mode = 2;
 
-    // Possess Character
-	for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
-	{
-		class AUnrealCharacter* Target = *It;
-		if (Target && Target->GetName() == TargetCharacter) {
-			Character = Target;
-		}
-	}
+        ModeSelect->RemoveFromViewport();
+        MenuPawn->OnClickedModeSelectShowdown();
 
-    // Set Menu Pawn Targets
-    MenuPawn->SetCharacter(Character);
+        // Possess Character
+        for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
+        {
+            class AUnrealCharacter* Target = *It;
+            if (Target && Target->GetName() == TargetCharacter) {
+                Character = Target;
+            }
+        }
 
-    // Set Character Targets
-    Character->SetActorTickEnabled(true);
-    Character->SetCharacterGameLocation();
-    Character->SetCharacterRotation(FRotator(0, -90, 0));
-    Character->TargetState = 2;
+        // Set Menu Pawn Targets
+        MenuPawn->SetCharacter(Character);
 
-    ModeReady->AddToViewport();
+        // Set Character Targets
+        Character->SetActorTickEnabled(true);
+        Character->SetCharacterGameLocation();
+        Character->SetCharacterRotation(FRotator(0, -90, 0));
+        Character->TargetState = 2;
 
-    // Find Opponent
+        ModeReady->AddToViewport();
+
+        // Find Opponent
+    }
 }
 
 void AMainPlayerController::OnClickedModeReadyStart()
@@ -197,29 +223,37 @@ void AMainPlayerController::OnClickedModeReadyReturn()
 {
     if (!ensure(MenuPawn)) { return; }
 
-    ModeReady->RemoveFromViewport();
-    MenuPawn->OnClickedModeReadyReturn();
-    CharacterSelect->AddToViewport();
+    if (CharacterSelect) {
+        Mode = 0;
 
-    // Return Character to start location
-    Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
-    Character->SetCharacterRotation(FRotator(0, 0, 0));
-    Character->TargetState = 0;
+        ModeReady->RemoveFromViewport();
+        MenuPawn->OnClickedModeReadyReturn();
+        CharacterSelect->AddToViewport();
+
+        // Return Character to start location
+        Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+        Character->SetCharacterRotation(FRotator(0, 0, 0));
+        Character->TargetState = 0;
+    }
 }
 
 void AMainPlayerController::OnClickedEscapeMenuReturnToTitle()
 {
-    EscapeMenu->RemoveFromViewport();
-    MainMenu->AddToViewport();
+    if (MainMenu) {
+        Mode = 0;
 
-    MenuPawn->OnClickedEscapeMenuReturnToTitle();
-    UnPossess();
-    Possess(MenuPawn);
+        EscapeMenu->RemoveFromViewport();
+        MainMenu->AddToViewport();
 
-    Character->SpawnDefaultController();
-    Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
-    Character->SetCharacterRotation(FRotator(0, 0, 0));
-    Character->TargetState = 0;
+        MenuPawn->OnClickedEscapeMenuReturnToTitle();
+        UnPossess();
+        Possess(MenuPawn);
+
+        Character->SpawnDefaultController();
+        Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+        Character->SetCharacterRotation(FRotator(0, 0, 0));
+        Character->TargetState = 0;
+    }
 }
 
 // UI Accessors
@@ -241,10 +275,27 @@ void AMainPlayerController::EscapeMenuPressed()
 // Camera Shake
 void AMainPlayerController::CameraShake()
 {
-    ClientPlayCameraShake(
-        RecoilTarget,
-        3,    // intensity
-        ECameraAnimPlaySpace::CameraLocal,
-        FRotator(0, 0, 0)
-    );
+    if (RecoilTarget) {
+        ClientPlayCameraShake(
+            RecoilTarget,
+            3,    // intensity
+            ECameraAnimPlaySpace::CameraLocal,
+            FRotator(0, 0, 0)
+        );
+    }
+}
+
+// Get Mode
+int32 AMainPlayerController::GetMode()
+{
+    return Mode;
+}
+
+// Reset Targets
+void AMainPlayerController::ResetTargets()
+{
+    for (int32 i = 0; i < 8; i++)
+	{
+		PracticeTargets[i]->SetActorLocationAndRotation(PracticeTargetLocations[i], FRotator(0, 0, 0), false);
+	}
 }

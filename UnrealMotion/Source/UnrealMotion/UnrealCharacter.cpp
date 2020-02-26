@@ -26,6 +26,8 @@ void AUnrealCharacter::BeginPlay()
 	SetActorTickEnabled(false);
 	MainAnimInstance = dynamic_cast<UMainAnimInstance*>(GetMesh()->GetAnimInstance());
 	AimingComponent = FindComponentByClass<UAimingComponent>();
+
+	GetMesh()->OnComponentHit.AddDynamic(this, &AUnrealCharacter::OnMeshHit);
 	
 }
 
@@ -67,6 +69,7 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Draw", IE_Pressed, this, &AUnrealCharacter::Draw);
 	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AUnrealCharacter::Shoot);
 	PlayerInputComponent->BindAction("Load", IE_Pressed, this, &AUnrealCharacter::Load);
+	PlayerInputComponent->BindAction("ResetTargets", IE_Pressed, this, &AUnrealCharacter::ResetTargets);
 }
 
 // Get Hit Location in World
@@ -105,18 +108,6 @@ bool AUnrealCharacter::GetHitLocation(FVector& TargetHitLocation)
 	TargetHitLocation = FVector(0, 0, 0);
     return false;
 }
-
-// Get Hand OffsetRotation
-// void AUnrealCharacter::AimAt(FVector TargetDirection)
-// {
-// 	// Match to Hand Rotation
-// 	FRotator AimAsRotator = TargetDirection.Rotation();
-// 	AimAsRotator.Pitch = -AimAsRotator.Pitch;
-// 	AimAsRotator.Yaw -= 90;
-
-// 	// Set HandOffsetRotation to be replaced in MainAnimInstance
-// 	HandOffsetRotation = AimAsRotator;
-// }
 
 // Input Functions
 void AUnrealCharacter::EscapeMenu()
@@ -163,18 +154,12 @@ void AUnrealCharacter::Load()
 	}
 }
 
-// Get Camera Rotation
-// FRotator AUnrealCharacter::GetCameraRotation()
-// {
-// 	FRotator ReturnRotation = CameraRotation + FRotator(6, 0, 0);
-// 	return ReturnRotation;
-// }
-
-// Get Hand Offset Rotation
-// FRotator AUnrealCharacter::GetHandOffsetRotation()
-// {
-// 	return HandOffsetRotation;
-// }
+void AUnrealCharacter::ResetTargets()
+{
+	if (Cast<AMainPlayerController>(GetController())->GetMode() == 1) {
+		Cast<AMainPlayerController>(GetController())->ResetTargets();
+	}
+}
 
 // Camera Rotation Clamp
 void AUnrealCharacter::CameraRotationClamp()
@@ -278,17 +263,31 @@ void AUnrealCharacter::Lerp(float DeltaTime)
     }
 }
 
-// Character Lerp
+// Gun Lerp
 void AUnrealCharacter::GunLerp(float DeltaTime)
 {
 	UStaticMeshComponent* Gun = FindComponentByClass<UStaticMeshComponent>();
 	if (!ensure(Gun)) { return; }
 
+	FRotator TargetGunRotation;
+	if (Drawn == true) { TargetGunRotation = AimDirection.Rotation(); }
+	else { TargetGunRotation = FRotator(0, 0, 0); }
+
 	LITime = 0;
     if (LITime < LIDuration) {
         LITime += DeltaTime;
-        FRotator TargetRotation = FMath::Lerp(Gun->GetComponentRotation(), AimDirection.Rotation(), LITime);
-		Gun->SetWorldRotation(AimDirection.Rotation(), false);
+        FRotator TargetRotation = FMath::Lerp(Gun->GetComponentRotation(), TargetGunRotation, LITime);
+		if (Drawn == true) { Gun->SetWorldRotation(TargetRotation, false); }
+		else { Gun->SetRelativeRotation(TargetRotation, false); }
     }
 }
 
+void AUnrealCharacter::OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (MainAnimInstance) {
+		MainAnimInstance->RagdollAlpha = 1;
+		// get PlayerController to UnPossess() & Possess MenuPawn
+		// call PlayerController OnHit() & return to Title Screen
+		// Update LeaderBoards
+	}
+}

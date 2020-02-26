@@ -75,6 +75,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetLoadMontage(UAnimMontage* LoadMontageTarget);
 
+	// Ragdoll Alpha
+	UPROPERTY(BlueprintReadOnly, Category = "Ragdoll Alpha")
+	float RagdollAlpha = 0;
+
 protected:
 	// Native initialization override point
 	virtual void NativeInitializeAnimation() override;
