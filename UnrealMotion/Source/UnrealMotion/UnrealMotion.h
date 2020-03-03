@@ -2,5 +2,9 @@
 
 #pragma once
 
+#include "Engine.h"
+#include "UnrealNetwork.h"
+#include "Online.h"
+
 #include "CoreMinimal.h"
 
