@@ -18,6 +18,9 @@ public:
 	// Sets default values for this character's properties
 	AUnrealCharacter();
 
+	/** Property replication */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	// Set Character target Location & Rotation
 	void SetCharacterStartLocation(int32 StartLocationID);
 	void SetCharacterGameLocation();
@@ -26,6 +29,30 @@ public:
 
 	// For Delayed State Change
 	int32 TargetState = 0;
+
+	/** Getter for Current Condition */
+	UFUNCTION(BlueprintPure, Category = "Condition")
+	FORCEINLINE float GetisAlive() const { return isAlive; }
+
+	/** Setter for Current Condition */
+	UFUNCTION(BlueprintCallable, Category="Health")
+	void SetisAlive(bool Alive);
+
+	/** Event for taking damage. Overridden from APawn.*/
+	UFUNCTION(BlueprintCallable, Category = "Condition")
+	float TakeDamage( float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser ) override;
+
+	// Get Camera Rotation for AnimInstance
+	UFUNCTION(BlueprintPure, Category = "Condition")
+	FORCEINLINE FRotator GetCameraRotation() { return CameraRotation; }
+
+	// Set Camera Rotation for AnimInstance
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+	void SetCameraRotation(FRotator CurrentRotation);
+
+	// Set Camera Rotation for AnimInstance
+	UFUNCTION(BlueprintCallable, Category = "Rotation")
+	void SetGunRotation(FRotator TargetRotation);
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,6 +63,52 @@ protected:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// Current Player Condition
+	UPROPERTY(ReplicatedUsing = OnRep_isAlive)
+	bool isAlive;
+
+	// RepNotify for changes made to isAlive
+	UFUNCTION()
+	void OnRep_isAlive();
+
+	/** Response to isAlive being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
+	void OnisAliveUpdate();
+
+	/** Server function for spawning projectiles.*/
+	UFUNCTION(Server, Reliable)
+	void HandleShoot();
+
+	/** Server function for loading projectiles.*/
+	UFUNCTION(Server, Reliable)
+	void HandleLoad();
+
+	/** Server function for loading projectiles.*/
+	UFUNCTION(Server, Reliable)
+	void HandleDraw(bool DrawState);
+
+	// Camera Rotation for Spine3Rotation in MainAnimInstance
+	UPROPERTY(ReplicatedUsing = OnRep_CameraRotation)
+	FRotator CameraRotation;
+
+	// RepNotify for changes made to CameraRotation
+	UFUNCTION()
+	void OnRep_CameraRotation();
+
+	/** Response to CameraRotation being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
+	void OnCameraRotationUpdate();
+
+	// Camera Rotation for Spine3Rotation in MainAnimInstance
+	UPROPERTY(ReplicatedUsing = OnRep_GunRotation)
+	FRotator GunRotation;
+
+	// RepNotify for changes made to GunRotation
+	UFUNCTION()
+	void OnRep_GunRotation();
+
+	/** Response to CameraRotation being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
+	void OnGunRotationUpdate();
+
 
 private:
 	// References
@@ -71,7 +144,6 @@ private:
 
 	// Camera Clamp
 	void CameraRotationClamp();
-	FRotator CameraRotation;
 	float CameraPitchClamp = 10;
 	float CameraYawClamp = 25;
 
@@ -87,7 +159,7 @@ private:
 	bool GetHitLocation(FVector& TargetHitLocation);
 
 	// On Mesh Hit
-	UFUNCTION()
-	void OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+	// UFUNCTION()
+	// void OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
 };

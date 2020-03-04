@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "Camera/CameraComponent.h"
 #include "Animation/AnimMontage.h"
+#include "UnrealCharacter.h"
 
 ///////////////////////////////// Constructors ////////////////////////////////////
 UMainAnimInstance::UMainAnimInstance(const FObjectInitializer &ObjectInitializer)
@@ -23,7 +24,7 @@ void UMainAnimInstance::NativeInitializeAnimation()
 
     // Get State
     MainState = GetStateMachineInstanceFromName(FName(TEXT("MainState")));
-    // UnrealCharacter = Cast<AUnrealCharacter>(GetSkelMeshComponent()->GetOwner());
+    UnrealCharacter = Cast<AUnrealCharacter>(GetSkelMeshComponent()->GetOwner());
 
     // IK Foot Trace parameters
     TraceParameters = FCollisionQueryParams(TraceTag, false);
@@ -65,10 +66,9 @@ void UMainAnimInstance::AnimNotify_WalkingEntry()
 {
     LeftFootIKAlpha = 0.75;
     RightFootIKAlpha = 0.75;
-}
 
-// void UMainAnimInstance::AnimNotify_ReadyEntry()
-// {}
+    // UnrealCharacter = Cast<AUnrealCharacter>(GetSkelMeshComponent()->GetOwner());
+}
 
 void UMainAnimInstance::SetLoadMontage(UAnimMontage* LoadMontageTarget)
 {
@@ -80,7 +80,8 @@ void UMainAnimInstance::TargetLerp(float DeltaTimeX)
 {
     if (!ensure(GetSkelMeshComponent()->GetOwner())) { return; }
 
-    FRotator TargetSpine3Rotation = GetSkelMeshComponent()->GetOwner()->FindComponentByClass<UCameraComponent>()->GetRelativeRotation() + FRotator(6, 0, 0);
+    FRotator TargetSpine3Rotation;
+    if (UnrealCharacter) { TargetSpine3Rotation = UnrealCharacter->GetCameraRotation(); }
     // FRotator TargetHandRotation = UnrealCharacter->GetHandOffsetRotation();
     
     LerpTime = 0;

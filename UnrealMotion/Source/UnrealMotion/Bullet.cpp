@@ -9,6 +9,7 @@
 #include "PhysicsEngine/RadialForceComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/Class.h"
+#include "UObject/ConstructorHelpers.h"
 
 // Sets default values
 ABullet::ABullet()
@@ -23,6 +24,7 @@ ABullet::ABullet()
 	SetRootComponent(CollisionMesh);   
 	CollisionMesh->SetNotifyRigidBodyCollision(true);  
 	CollisionMesh->SetVisibility(false);
+	if (Role == ROLE_Authority) { CollisionMesh->OnComponentHit.AddDynamic(this, &ABullet::OnHit); }
 
 	LaunchBlast = CreateDefaultSubobject<UParticleSystemComponent>(FName("Launch Blast"));
 	LaunchBlast->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
@@ -34,6 +36,8 @@ ABullet::ABullet()
 	ExplosionForce = CreateDefaultSubobject<URadialForceComponent>(FName("Explosion Force"));
 	ExplosionForce->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
+	bReplicates = true;
+
 }
 
 // Called when the game starts or when spawned
@@ -41,7 +45,7 @@ void ABullet::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	CollisionMesh->OnComponentHit.AddDynamic(this, &ABullet::OnHit);
+	// CollisionMesh->OnComponentHit.AddDynamic(this, &ABullet::OnHit);
 }
 
 // Called every frame
@@ -68,14 +72,16 @@ void ABullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 	CollisionMesh->DestroyComponent();
 
 	// apply damage
-	UGameplayStatics::ApplyRadialDamage(
-		this,
-		10,
-		GetActorLocation(),
-		ExplosionForce->Radius,   
-		UDamageType::StaticClass(),
-		TArray<AActor*>()  // Empty array
-	);
+	if (OtherActor) {
+		UGameplayStatics::ApplyRadialDamage(
+			this,
+			10,
+			GetActorLocation(),
+			ExplosionForce->Radius,   
+			UDamageType::StaticClass(),
+			TArray<AActor*>()  // Empty array
+		);
+	} 
 
 	// Bullet clean-up
 	FTimerHandle Timer;

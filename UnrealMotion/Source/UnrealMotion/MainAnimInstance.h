@@ -53,8 +53,6 @@ public:
 	void AnimNotify_IdleEntry();
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_WalkingEntry();
-	// UFUNCTION(BlueprintCallable)
-	// void AnimNotify_ReadyEntry();
 
 	// Transition Variables
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
@@ -88,7 +86,7 @@ protected:
 
 private:
 	// Character Reference
-	//class AUnrealCharacter* UnrealCharacter = nullptr;
+	class AUnrealCharacter* UnrealCharacter = nullptr;
 
 	// State Machine
 	FAnimNode_StateMachine *MainState;

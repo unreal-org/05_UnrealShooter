@@ -15,6 +15,21 @@ public:
 	// Sets default values for this actor's properties
 	ABullet();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UStaticMeshComponent* CollisionMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UProjectileMovementComponent* ProjectileMovement = nullptr;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	class URadialForceComponent* ExplosionForce = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Effects")
+	class UParticleSystemComponent* LaunchBlast = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Effects")
+	class UParticleSystemComponent* ImpactBlast = nullptr;
+
 	void LaunchProjectile(float Speed);
 
 protected:
@@ -24,24 +39,10 @@ protected:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-private:	
-	class UProjectileMovementComponent* ProjectileMovement = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UStaticMeshComponent* CollisionMesh = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UParticleSystemComponent* LaunchBlast = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UParticleSystemComponent* ImpactBlast = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class URadialForceComponent* ExplosionForce = nullptr;
-
-	UFUNCTION()
+	UFUNCTION(Category = "Projectile")
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
+private:
 	void OnTimerExpire();
 
 };

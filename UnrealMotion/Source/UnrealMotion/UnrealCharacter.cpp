@@ -9,6 +9,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
 #include "AimingComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 
 // Sets default values
 AUnrealCharacter::AUnrealCharacter()
@@ -16,6 +18,18 @@ AUnrealCharacter::AUnrealCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	isAlive = true;
+}
+
+// Replicated Properties
+void AUnrealCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    // Replicate
+    DOREPLIFETIME(AUnrealCharacter, isAlive);
+	DOREPLIFETIME(AUnrealCharacter, CameraRotation);
+	DOREPLIFETIME(AUnrealCharacter, GunRotation);
 }
 
 // Called when the game starts or when spawned
@@ -27,7 +41,7 @@ void AUnrealCharacter::BeginPlay()
 	MainAnimInstance = dynamic_cast<UMainAnimInstance*>(GetMesh()->GetAnimInstance());
 	AimingComponent = FindComponentByClass<UAimingComponent>();
 
-	GetMesh()->OnComponentHit.AddDynamic(this, &AUnrealCharacter::OnMeshHit);
+	//GetMesh()->OnComponentHit.AddDynamic(this, &AUnrealCharacter::OnMeshHit);
 	
 }
 
@@ -71,6 +85,111 @@ void AUnrealCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Load", IE_Pressed, this, &AUnrealCharacter::Load);
 	PlayerInputComponent->BindAction("ResetTargets", IE_Pressed, this, &AUnrealCharacter::ResetTargets);
 }
+
+// Network
+void  AUnrealCharacter::OnRep_isAlive() { OnisAliveUpdate(); }
+
+void AUnrealCharacter::OnisAliveUpdate()
+{
+    //Client-specific functionality
+    if (IsLocallyControlled())
+    {
+        if (isAlive == true)  
+        {
+			FString aliveMessage = FString::Printf(TEXT("You are Alive."));
+        	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, aliveMessage);
+        } else {
+			// Trigger RagdollAlpha here
+            FString deathMessage = FString::Printf(TEXT("You are Dead."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, deathMessage);
+		}
+    }
+
+    //Server-specific functionality
+    if (Role == ROLE_Authority)
+    {
+		if (isAlive == false) {
+			FString conditionMessage = FString::Printf(TEXT("%s is Dead."), *GetFName().ToString());
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, conditionMessage);
+		}
+    }
+
+    //Functions that occur on all machines. 
+    /*  
+        Any special functionality that should occur as a result of damage or death should be placed here. 
+    */
+}
+
+void AUnrealCharacter::SetisAlive(bool Alive)
+{
+    if (Role == ROLE_Authority)
+    {
+		isAlive = Alive;
+        OnisAliveUpdate();  // Necessary because the server will not receive the RepNotify - to ensure parallel calls on server & client
+    }
+}
+
+float AUnrealCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	SetisAlive(false);
+    return 0;
+}
+
+void AUnrealCharacter::HandleShoot_Implementation()
+{
+	if (AimingComponent) { AimingComponent->Fire(); }
+	Cast<AMainPlayerController>(GetController())->CameraShake();
+	// CameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
+	FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CameraRotation + FRotator(5, 0, 0), false);
+}
+
+void AUnrealCharacter::HandleLoad_Implementation()
+{
+	if (MainAnimInstance) { MainAnimInstance->PlayLoadMontage(); }
+}
+
+void AUnrealCharacter::HandleDraw_Implementation(bool DrawState)
+{
+	if (DrawState == true) {
+		MainAnimInstance->ReadyIndex = 1;
+	} else {
+		MainAnimInstance->ReadyIndex = 0;
+	}
+}
+
+void AUnrealCharacter::OnRep_CameraRotation() { OnCameraRotationUpdate(); }
+
+void AUnrealCharacter::OnCameraRotationUpdate()
+{
+	// Needed?
+}
+
+void AUnrealCharacter::SetCameraRotation(FRotator CurrentRotation)
+{
+	if (Role == ROLE_Authority) {
+        CameraRotation = CurrentRotation + FRotator(6, 0, 0);
+        OnCameraRotationUpdate();
+    }
+}
+
+void AUnrealCharacter::OnRep_GunRotation() { OnGunRotationUpdate(); }
+
+void AUnrealCharacter::OnGunRotationUpdate()
+{
+	// Needed?
+}
+
+void AUnrealCharacter::SetGunRotation(FRotator TargetRotation)
+{
+	if (Role == ROLE_Authority) {
+		GunRotation = TargetRotation;
+		if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(GunRotation, false); }
+		else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(GunRotation, false); }
+        
+		OnGunRotationUpdate();
+    }
+}
+
 
 // Get Hit Location in World
 bool AUnrealCharacter::GetHitLocation(FVector& TargetHitLocation)
@@ -124,32 +243,36 @@ void AUnrealCharacter::Draw()
 	// Change Pose Index & Drawn bool
 	if (Drawn == false) {
 		Drawn = true;
-		MainAnimInstance->ReadyIndex = 1;
+		// MainAnimInstance->ReadyIndex = 1;
 	} else {
 		Drawn = false;
-		MainAnimInstance->ReadyIndex = 0;
+		// MainAnimInstance->ReadyIndex = 0;
 	}
+
+	HandleDraw(Drawn);
 }
 
 void AUnrealCharacter::Shoot()
 {
 	// Get Player Controller & Add EscapeMenu to viewport
-	if (AimingComponent) {
+	// if (AimingComponent) {
 		if (Drawn == true && Loaded == true) {
 			Loaded = false;
-			AimingComponent->Fire();
-			Cast<AMainPlayerController>(GetController())->CameraShake();
-			CameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
-			FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CameraRotation + FRotator(5, 0, 0), false);
+			HandleShoot();
+			// AimingComponent->Fire();
+			// Cast<AMainPlayerController>(GetController())->CameraShake();
+			// CameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
+			// FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CameraRotation + FRotator(5, 0, 0), false);
 		}
-	}
+	// }
 }
 
 void AUnrealCharacter::Load()
 {
 	if (Drawn == true && Loaded == false) {
 		// Play Load Slot Montage
-		if (MainAnimInstance) { MainAnimInstance->PlayLoadMontage(); }
+		//if (MainAnimInstance) { MainAnimInstance->PlayLoadMontage(); }
+		HandleLoad();
 		Loaded = true;
 	}
 }
@@ -166,13 +289,16 @@ void AUnrealCharacter::CameraRotationClamp()
 {
 	if (!ensure(FindComponentByClass<UCameraComponent>())) { return; }
 
-	CameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
+	FRotator CurrentCameraRotation = FindComponentByClass<UCameraComponent>()->GetRelativeRotation();
 
-	CameraRotation.Pitch = FMath::ClampAngle(CameraRotation.Pitch, -CameraPitchClamp, CameraPitchClamp);
-    CameraRotation.Yaw = FMath::ClampAngle(CameraRotation.Yaw, -CameraYawClamp, CameraYawClamp);
-    CameraRotation.Roll = FMath:: ClampAngle(CameraRotation.Roll, 0, 0);
+	CurrentCameraRotation.Pitch = FMath::ClampAngle(CurrentCameraRotation.Pitch, -CameraPitchClamp, CameraPitchClamp);
+    CurrentCameraRotation.Yaw = FMath::ClampAngle(CurrentCameraRotation.Yaw, -CameraYawClamp, CameraYawClamp);
+    CurrentCameraRotation.Roll = FMath:: ClampAngle(CurrentCameraRotation.Roll, 0, 0);
 
-	FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CameraRotation, false);
+	FindComponentByClass<UCameraComponent>()->SetRelativeRotation(CurrentCameraRotation, false);
+
+	// Server Call
+	SetCameraRotation(CurrentCameraRotation);
 }
 
 // Set Character State
@@ -196,7 +322,6 @@ void AUnrealCharacter::SetCharacterState(int32 State)
 			break;
 		case 2: // Player Control
 			if (MainAnimInstance) { MainAnimInstance->Ready = true; }
-			
 			break;
 	}
 }
@@ -266,8 +391,8 @@ void AUnrealCharacter::Lerp(float DeltaTime)
 // Gun Lerp
 void AUnrealCharacter::GunLerp(float DeltaTime)
 {
-	UStaticMeshComponent* Gun = FindComponentByClass<UStaticMeshComponent>();
-	if (!ensure(Gun)) { return; }
+	// UStaticMeshComponent* Gun = FindComponentByClass<UStaticMeshComponent>();
+	// if (!ensure(Gun)) { return; }
 
 	FRotator TargetGunRotation;
 	if (Drawn == true) { TargetGunRotation = AimDirection.Rotation(); }
@@ -276,18 +401,20 @@ void AUnrealCharacter::GunLerp(float DeltaTime)
 	LITime = 0;
     if (LITime < LIDuration) {
         LITime += DeltaTime;
-        FRotator TargetRotation = FMath::Lerp(Gun->GetComponentRotation(), TargetGunRotation, LITime);
-		if (Drawn == true) { Gun->SetWorldRotation(TargetRotation, false); }
-		else { Gun->SetRelativeRotation(TargetRotation, false); }
+        FRotator TargetRotation = FMath::Lerp(FindComponentByClass<UStaticMeshComponent>()->GetComponentRotation(), TargetGunRotation, LITime);
+		SetGunRotation(TargetRotation);
+		// if (Drawn == true) { Gun->SetWorldRotation(TargetRotation, false); }
+		// else { Gun->SetRelativeRotation(TargetRotation, false); }
     }
 }
 
-void AUnrealCharacter::OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (MainAnimInstance) {
-		MainAnimInstance->RagdollAlpha = 1;
-		// get PlayerController to UnPossess() & Possess MenuPawn
-		// call PlayerController OnHit() & return to Title Screen
-		// Update LeaderBoards
-	}
-}
+// void AUnrealCharacter::OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+// {
+// 	if (MainAnimInstance) {
+// 		MainAnimInstance->RagdollAlpha = 1;
+// 		// get PlayerController to UnPossess() & Possess MenuPawn
+// 		// call PlayerController OnHit() & return to Title Screen
+// 		// Update LeaderBoards
+// 	}
+// }
+
