@@ -9,6 +9,8 @@
 #include "UnrealCharacter.h"
 #include "Engine/StaticMeshActor.h"
 #include "Containers/UnrealString.h"
+#include "Engine/LocalPlayer.h"
+#include "LAGameInstance.h"
 
 void AMainPlayerController::BeginPlay()
 {
@@ -200,7 +202,10 @@ void AMainPlayerController::OnClickedModeSelectShowdown()
 
         ModeReady->AddToViewport();
 
-        // Find Opponent
+        // Find Opponent or Host Session
+        ULocalPlayer* Player = GetGameInstance()->GetFirstGamePlayer();
+        FUniqueNetIdWrapper UniqueNetIdWrapper = FUniqueNetIdWrapper(Player->GetPreferredUniqueNetId());
+        Cast<ULAGameInstance>(Player->GetGameInstance())->FindSessions(UniqueNetIdWrapper.GetUniqueNetId(), true, true);
     }
 }
 

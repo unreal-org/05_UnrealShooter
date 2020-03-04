@@ -19,7 +19,7 @@ public:
 
 	FVector ReadyAim(FVector HitLocation);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Setup")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<ABullet> BulletTarget;
 
 	UFUNCTION(BluePrintCallable, Category = "Firing")
@@ -35,5 +35,8 @@ protected:
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
 	float LaunchSpeed = 12500;
+
+	// Previous Aim Direction
+	FVector PrevAimDirection;
 	
 };

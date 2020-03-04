@@ -52,6 +52,8 @@ public:
 protected:
 
 private:
+	// SessionName
+	FName ShowdownSessionName;
 
 	/////// Hosting Session ///////
 

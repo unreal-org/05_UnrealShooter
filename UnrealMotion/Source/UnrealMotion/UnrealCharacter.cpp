@@ -61,7 +61,10 @@ void AUnrealCharacter::Tick(float DeltaTime)
 			CameraRotationClamp();
 			if (Drawn == true) {
 				if (GetHitLocation(HitLocation)) {  	 // Get HitLocation
-					if (AimingComponent) { AimDirection = AimingComponent->ReadyAim(HitLocation); } 	 // Get AimDirection using ReadyAim with HitLocation using AimingComponent
+					if (AimingComponent) {
+						AimDirection = AimingComponent->ReadyAim(HitLocation);    // Get AimDirection using ReadyAim with HitLocation using AimingComponent
+						SetGunRotation(AimDirection.Rotation());
+					} 	 
 					GunLerp(DeltaTime);
 				}
 			}
@@ -183,8 +186,8 @@ void AUnrealCharacter::SetGunRotation(FRotator TargetRotation)
 {
 	if (Role == ROLE_Authority) {
 		GunRotation = TargetRotation;
-		if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(GunRotation, false); }
-		else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(GunRotation, false); }
+		// if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(GunRotation, false); }
+		// else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(GunRotation, false); }
         
 		OnGunRotationUpdate();
     }
@@ -394,17 +397,17 @@ void AUnrealCharacter::GunLerp(float DeltaTime)
 	// UStaticMeshComponent* Gun = FindComponentByClass<UStaticMeshComponent>();
 	// if (!ensure(Gun)) { return; }
 
-	FRotator TargetGunRotation;
-	if (Drawn == true) { TargetGunRotation = AimDirection.Rotation(); }
-	else { TargetGunRotation = FRotator(0, 0, 0); }
+	// FRotator TargetGunRotation;
+	// if (Drawn == true) { TargetGunRotation = AimDirection.Rotation(); }
+	// else { TargetGunRotation = FRotator(0, 0, 0); }
 
 	LITime = 0;
     if (LITime < LIDuration) {
         LITime += DeltaTime;
-        FRotator TargetRotation = FMath::Lerp(FindComponentByClass<UStaticMeshComponent>()->GetComponentRotation(), TargetGunRotation, LITime);
-		SetGunRotation(TargetRotation);
-		// if (Drawn == true) { Gun->SetWorldRotation(TargetRotation, false); }
-		// else { Gun->SetRelativeRotation(TargetRotation, false); }
+        FRotator TargetRotation = FMath::Lerp(FindComponentByClass<UStaticMeshComponent>()->GetComponentRotation(), GunRotation, LITime);
+		
+		if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(TargetRotation, false); }
+		else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(TargetRotation, false); }
     }
 }
 

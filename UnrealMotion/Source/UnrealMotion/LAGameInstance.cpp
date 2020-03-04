@@ -56,7 +56,7 @@ bool ULAGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId, FName S
 			SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
 
             // Set Showdown Map here
-			SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
+			SessionSettings->Set(SETTING_MAPNAME, FString("ShowdownMap"), EOnlineDataAdvertisementType::ViaOnlineService);
 
 			// Set the delegate to the Handle of the SessionInterface
 			OnCreateSessionCompleteDelegateHandle = Sessions->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
@@ -122,7 +122,7 @@ void ULAGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSucc
 	if (bWasSuccessful)
 	{
         // Open Showdown Map here
-		UGameplayStatics::OpenLevel(GetWorld(), "NewMap", true, "listen");
+		UGameplayStatics::OpenLevel(GetWorld(), "ShowdownMap", true, "listen");
 	}
 }
 
@@ -161,7 +161,27 @@ void ULAGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, bool b
 			OnFindSessionsCompleteDelegateHandle = Sessions->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
 			
 			// Finally call the SessionInterface function. The Delegate gets called once this is finished
-			Sessions->FindSessions(*UserId, SearchSettingsRef);
+			// If FindSessions returns false, the HostSession
+			if (Sessions->FindSessions(*UserId, SearchSettingsRef) == false) {
+				HostSession(UserId, ShowdownSessionName, bIsLAN, bIsPresence, 2);
+			}
+			else {
+				ULocalPlayer* const Player = GetFirstGamePlayer();
+				bool Joined = false;
+				for (int32 i = 0; i < SessionSearch->SearchResults.Num(); i++)
+				{
+					if (SessionSearch->SearchResults[i].Session.OwningUserId != Player->GetPreferredUniqueNetId())
+					{
+						FOnlineSessionSearchResult SearchResult = SessionSearch->SearchResults[i];
+
+						// Once we found sounce a Session that is not ours, just join it. Instead of using a for loop, you could
+						// use a widget where you click on and have a reference for the GameSession it represents which you can use here
+						Joined = JoinSession(UserId, ShowdownSessionName, SearchResult);
+					}
+					
+					if (Joined == true) { break; }
+				}
+			}
 		}
 	}
 	else
@@ -291,7 +311,7 @@ void ULAGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
 			if (bWasSuccessful)
 			{
                 // Open Main Map here
-				// UGameplayStatics::OpenLevel(GetWorld(), "ThirdPersonExampleMap", true);
+				UGameplayStatics::OpenLevel(GetWorld(), "UnrealMotionMap", true);
 			}
 		}
 	}
