@@ -54,6 +54,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Rotation")
 	void SetGunRotation(FRotator TargetRotation);
 
+	// Set Camera Rotation for AnimInstance
+	UFUNCTION(BlueprintCallable, Category = "Current State")
+	void SetShowdown(bool ShowdownValue);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -117,6 +121,7 @@ private:
 
 	// Character State
 	int32 CharacterState = 0;
+	bool Showdown = false;
 
 	// Locations
 	FVector StartLocation_0 = FVector(100, 1350, 90.15);
@@ -144,8 +149,8 @@ private:
 
 	// Camera Clamp
 	void CameraRotationClamp();
-	float CameraPitchClamp = 10;
-	float CameraYawClamp = 25;
+	float CameraPitchClamp = 6;
+	float CameraYawClamp = 20;
 
 	// Draw
 	bool Drawn = false;
@@ -155,6 +160,7 @@ private:
 	// Get Hit Location
 	FVector HitLocation;
 	FVector AimDirection;
+	float LineTraceLength = 3500;
 	FRotator HandOffsetRotation;
 	bool GetHitLocation(FVector& TargetHitLocation);
 

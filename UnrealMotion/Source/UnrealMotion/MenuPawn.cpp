@@ -6,6 +6,10 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SplineComponent.h"
 #include "UnrealCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "Containers/UnrealString.h"
+#include "GameFramework/GameState.h"
+
 
 // Sets default values
 AMenuPawn::AMenuPawn()
@@ -19,32 +23,56 @@ AMenuPawn::AMenuPawn()
 void AMenuPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	// Get Spline Component references
-	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+
+	if (UGameplayStatics::GetCurrentLevelName(GetWorld(), true).Equals(FString("ShowdownMap"), ESearchCase::IgnoreCase))
 	{
-		class AActor* Target = *It;
-		if (Target && Target->GetName() == FString("MainMenuSpline_BP_2")) {
-			MainMenuSpline = Target->FindComponentByClass<USplineComponent>(); 
-		}
-		if (Target && Target->GetName() == FString("CharacterSelectSpline_BP_2")) {
-			CharacterSelectSpline = Target->FindComponentByClass<USplineComponent>();
+		Showdown = true;
+
+		// Check GetGameState Player count to see if host or client
+		int32 playercount = UGameplayStatics::GetGameState(GetWorld())->PlayerArray.Num();
+
+		if (playercount == 1) {
+			// if host
+			TargetLocation = FVector(850, 1910, 135);
+			LookAtRotation = FRotator(0, -90, 0);
+
+			SetActorRotation(LookAtRotation, ETeleportType::None);
+			SetActorLocation(TargetLocation, false);
+		} else {
+			// if client
+			TargetLocation = FVector(850, -160, 135);
+			LookAtRotation = FRotator(0, 90, 0);
+
+			SetActorRotation(LookAtRotation, ETeleportType::None);
+			SetActorLocation(TargetLocation, false);
 		}
 	}
+	else {
+		// Get Spline Component references
+		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+		{
+			class AActor* Target = *It;
+			if (Target && Target->GetName() == FString("MainMenuSpline_BP_2")) {
+				MainMenuSpline = Target->FindComponentByClass<USplineComponent>(); 
+			}
+			if (Target && Target->GetName() == FString("CharacterSelectSpline_BP_2")) {
+				CharacterSelectSpline = Target->FindComponentByClass<USplineComponent>();
+			}
+		}
 
-	// Get & Set Initial values
-	if (MainMenuSpline) {
-		TargetLocation = MainMenuSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);  // Set MenuPawn Initial TargetLocation for Interp
-		SplineLength = MainMenuSpline->GetSplineLength();    // Get SplineLength to Loop MenuPawn TargetLocation
-		TargetSpline = MainMenuSpline;     // Set TargetSpline to MainMenuSpline
-		SplineDistance = 0;    // Start at Length 0 on Main Menu Spline
+		// Get & Set Initial values
+		if (MainMenuSpline) {
+			TargetLocation = MainMenuSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);  // Set MenuPawn Initial TargetLocation for Interp
+			SplineLength = MainMenuSpline->GetSplineLength();    // Get SplineLength to Loop MenuPawn TargetLocation
+			TargetSpline = MainMenuSpline;     // Set TargetSpline to MainMenuSpline
+			SplineDistance = 0;    // Start at Length 0 on Main Menu Spline
+		}
+
+		// Set MenuPawn variables
+		SetActorLocation(TargetLocation, false);
+		CurrentState = 0;
+		InterpSpeed = 3;
 	}
-
-	// Set MenuPawn variables
-	SetActorLocation(TargetLocation, false);
-	CurrentState = 0;
-	InterpSpeed = 3;
-	
 }
 
 // Called every frame
@@ -52,32 +80,35 @@ void AMenuPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	switch (CurrentState)
-    {
-        case 0: // Main Menu
-			SplineDistance = UKismetMathLibrary::GenericPercent_FloatFloat(SplineDistance + DeltaTime * 30, SplineLength);   // Modulo to reset Distance after SplineLength
-			if (!ensure(TargetSpline)) { return; }   // Double ensure due to crashing
-			if (TargetSpline) { TargetLocation = TargetSpline->GetWorldLocationAtDistanceAlongSpline(SplineDistance); }  // Get Location at SplineDistance
-			LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FVector(830, 870, 0));  // Look at Center of arena
-            break;
-		case 1: // Character Select
-			if (!ensure(TargetSpline)) { return; } // Double ensure due to crashing
-			if (TargetSpline) { TargetLocation = TargetSpline->GetLocationAtSplinePoint(CharacterID, ESplineCoordinateSpace::World); }  // Set Location at Spline Point
-			LookAtRotation = FRotator(0, 180, 0); // Look in direction of character
-			break;
-		case 2: // Mode Select
-			break;
-		case 3: // Practice Mode & Showdown
-			if (CharacterReference) {
-				FVector Target = CharacterReference->GetActorLocation();
-				Target.Z += 15;
-				LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target);  // Look at Center of arena
-			}
-			break;
-    }
+	if (Showdown == false) {
+		switch (CurrentState)
+		{
+			case 0: // Main Menu
+				SplineDistance = UKismetMathLibrary::GenericPercent_FloatFloat(SplineDistance + DeltaTime * 30, SplineLength);   // Modulo to reset Distance after SplineLength
+				if (!ensure(TargetSpline)) { return; }   // Double ensure due to crashing
+				if (TargetSpline) { TargetLocation = TargetSpline->GetWorldLocationAtDistanceAlongSpline(SplineDistance); }  // Get Location at SplineDistance
+				LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FVector(830, 870, 0));  // Look at Center of arena
+				break;
+			case 1: // Character Select
+				if (!ensure(TargetSpline)) { return; } // Double ensure due to crashing
+				if (TargetSpline) { TargetLocation = TargetSpline->GetLocationAtSplinePoint(CharacterID, ESplineCoordinateSpace::World); }  // Set Location at Spline Point
+				LookAtRotation = FRotator(0, 180, 0); // Look in direction of character
+				break;
+			case 2: // Mode Select
+				break;
+			case 3: // Practice Mode & Showdown
+				if (CharacterReference) {
+					FVector Target = CharacterReference->GetActorLocation();
+					Target.Z += 15;
+					LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target);  // Look at Center of arena
+				}
+				break;
+		}
 
-	LerpAndInterp(DeltaTime);
-	
+		LerpAndInterp(DeltaTime);
+	}
+
+	//LerpAndInterp(DeltaTime);
 }
 
 // Lerp & Interp
@@ -93,6 +124,9 @@ void AMenuPawn::LerpAndInterp(float DeltaTime)
 		SetActorRotation(MenuPawnRotation, ETeleportType::None);
 		SetActorLocation(MenuPawnLocation, false);
     }
+
+	// SetActorRotation(LookAtRotation, ETeleportType::None);
+	// SetActorLocation(TargetLocation, false);
 }
 
 //////////////////////////// Accessors & Setters ////////////////////////////////

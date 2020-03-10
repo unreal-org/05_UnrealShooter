@@ -49,6 +49,8 @@ public:
 	*/
 	bool JoinSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult);
 
+	void Showdown();
+
 protected:
 
 private:

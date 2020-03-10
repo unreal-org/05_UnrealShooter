@@ -64,7 +64,9 @@ void AUnrealCharacter::Tick(float DeltaTime)
 					if (AimingComponent) {
 						AimDirection = AimingComponent->ReadyAim(HitLocation);    // Get AimDirection using ReadyAim with HitLocation using AimingComponent
 						SetGunRotation(AimDirection.Rotation());
-					} 	 
+					}
+					// UE_LOG(LogTemp, Warning, TEXT("Hit Location: %s"), *HitLocation.ToString())
+					//UE_LOG(LogTemp, Warning, TEXT("Aim Direction: %s"), *AimDirection.ToString())
 					GunLerp(DeltaTime);
 				}
 			}
@@ -135,6 +137,8 @@ void AUnrealCharacter::SetisAlive(bool Alive)
 float AUnrealCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	SetisAlive(false);
+	UE_LOG(LogTemp, Warning, TEXT("%s took damage."), *GetName())
+	if (MainAnimInstance) { MainAnimInstance->RagdollAlpha = 1; }
     return 0;
 }
 
@@ -214,7 +218,7 @@ bool AUnrealCharacter::GetHitLocation(FVector& TargetHitLocation)
 	// Get Hit Location
 	FHitResult HitResult;
     FVector CameraLocation = FindComponentByClass<UCameraComponent>()->GetComponentLocation();
-	FVector CameraLookLocation = CameraLocation + HitWorldDirection * 1250;
+	FVector CameraLookLocation = CameraLocation + HitWorldDirection * LineTraceLength;
 
 	// Line Trace to limit range
 	if (GetWorld()->LineTraceSingleByChannel(
@@ -324,9 +328,20 @@ void AUnrealCharacter::SetCharacterState(int32 State)
 			}
 			break;
 		case 2: // Player Control
-			if (MainAnimInstance) { MainAnimInstance->Ready = true; }
+			if (Showdown) {
+				if (MainAnimInstance) {
+					MainAnimInstance->Walking = true;
+					MainAnimInstance->Ready = true;
+				}
+			}
+			else if (MainAnimInstance) { MainAnimInstance->Ready = true; }
 			break;
 	}
+}
+
+void AUnrealCharacter::SetShowdown(bool ShowdownValue)
+{
+	Showdown = ShowdownValue;
 }
 
 // Move Character to Location
@@ -398,7 +413,7 @@ void AUnrealCharacter::GunLerp(float DeltaTime)
 	// if (!ensure(Gun)) { return; }
 
 	// FRotator TargetGunRotation;
-	// if (Drawn == true) { TargetGunRotation = AimDirection.Rotation(); }
+	// if (Drawn == true) { TargetGunRotation = GunRotation; }
 	// else { TargetGunRotation = FRotator(0, 0, 0); }
 
 	LITime = 0;
@@ -407,8 +422,11 @@ void AUnrealCharacter::GunLerp(float DeltaTime)
         FRotator TargetRotation = FMath::Lerp(FindComponentByClass<UStaticMeshComponent>()->GetComponentRotation(), GunRotation, LITime);
 		
 		if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(TargetRotation, false); }
-		else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(TargetRotation, false); }
+		else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(FRotator(0, 0, 0), false); }
     }
+
+	// if (Drawn == true) { FindComponentByClass<UStaticMeshComponent>()->SetWorldRotation(AimDirection.Rotation(), false); }
+	// else { FindComponentByClass<UStaticMeshComponent>()->SetRelativeRotation(AimDirection.Rotation(), false); }
 }
 
 // void AUnrealCharacter::OnMeshHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)

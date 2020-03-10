@@ -69,4 +69,7 @@ private:
 	FVector TargetLocation;
 	FRotator LookAtRotation;
 
+	// Showdown
+	bool Showdown = false;
+
 };

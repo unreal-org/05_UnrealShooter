@@ -14,4 +14,6 @@ class UNREALMOTION_API AUnrealMotionGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+	// virtual AActor* ChoosePlayerStart(AController* Player) override;
+
 };

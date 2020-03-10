@@ -23,6 +23,13 @@ ULAGameInstance::ULAGameInstance(const FObjectInitializer& ObjectInitializer)
     OnDestroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(this, &ULAGameInstance::OnDestroySessionComplete);
 }
 
+// Host
+void ULAGameInstance::Showdown()
+{
+	ULocalPlayer* const Player = GetFirstGamePlayer();
+	FUniqueNetIdWrapper UniqueNetIdWrapper = FUniqueNetIdWrapper(Player->GetPreferredUniqueNetId());
+	FindSessions(UniqueNetIdWrapper.GetUniqueNetId(), true, true); 
+}
 
 // Hosting
 bool ULAGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, bool bIsLAN, bool bIsPresence, int32 MaxNumPlayers)
@@ -161,8 +168,10 @@ void ULAGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, bool b
 			OnFindSessionsCompleteDelegateHandle = Sessions->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
 			
 			// Finally call the SessionInterface function. The Delegate gets called once this is finished
+			Sessions->FindSessions(*UserId, SearchSettingsRef);
+
 			// If FindSessions returns false, the HostSession
-			if (Sessions->FindSessions(*UserId, SearchSettingsRef) == false) {
+			if (SessionSearch->SearchResults.Num() == 0) {
 				HostSession(UserId, ShowdownSessionName, bIsLAN, bIsPresence, 2);
 			}
 			else {

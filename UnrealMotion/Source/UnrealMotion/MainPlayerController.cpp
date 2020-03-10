@@ -11,27 +11,13 @@
 #include "Containers/UnrealString.h"
 #include "Engine/LocalPlayer.h"
 #include "LAGameInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Containers/UnrealString.h"
+#include "GameFramework/GameState.h"
 
 void AMainPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-    if (!ensure(MainMenuTarget)) { return; }
-    if (!ensure(CharacterSelectTarget)) { return; }
-    if (!ensure(ModeSelectTarget)) { return; }
-	
-    // Set UI Widget references
-    MainMenu = CreateWidget<UUIWidget>(this, MainMenuTarget);
-    CharacterSelect = CreateWidget<UUIWidget>(this, CharacterSelectTarget);
-    ModeSelect = CreateWidget<UUIWidget>(this, ModeSelectTarget);
-    ModeReady = CreateWidget<UUIWidget>(this, ModeReadyTarget);
-    EscapeMenu = CreateWidget<UUIWidget>(this, EscapeMenuTarget);
-
-    // Add MainMenu to viewport
-    if (MainMenu) { MainMenu->AddToViewport(); }
-
-    // Show Cursor
-    bShowMouseCursor = true;
 
     // Get MenuPawn Reference
     for (TActorIterator<AMenuPawn> It(GetWorld()); It; ++It)
@@ -42,17 +28,60 @@ void AMainPlayerController::BeginPlay()
 		}
 	}
 
-    // Get Practice Target References
-    FString PracticeTarget = FString("PracticeTarget_BP");
-    const TCHAR* Substring = *PracticeTarget;
-    for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
-	{
-		AStaticMeshActor* Target = *It;
-		if (Target && Target->GetName().Contains(Substring, ESearchCase::IgnoreCase, ESearchDir::FromStart)) {
-			PracticeTargets.Add(Target);
-            PracticeTargetLocations.Add(Target->GetActorLocation());
-		}
-	}
+    if (UGameplayStatics::GetCurrentLevelName(MenuPawn->GetWorld(), true).Equals(FString("ShowdownMap"), ESearchCase::IgnoreCase))
+    {
+        Showdown = true;
+        
+        // Show Cursor
+        bShowMouseCursor = true;
+
+        ModeReady = CreateWidget<UUIWidget>(this, ModeReadyTarget);
+        EscapeMenu = CreateWidget<UUIWidget>(this, EscapeMenuTarget);
+
+        int32 playercount = UGameplayStatics::GetGameState(GetGameInstance()->GetWorld())->PlayerArray.Num();
+
+        // UE_LOG(LogTemp, Warning, TEXT("player count : %i"), playercount)
+        // Check GetGameState Player count to see if host or client
+        if (playercount == 1) {
+            // if Game State Players = 1, possess character 1
+            TargetCharacter = FString("UnrealCharacter_BP_2");
+        } else {
+            // else possess character 2
+            TargetCharacter = FString("UnrealCharacter_BP2_5");
+        }
+
+        if (ModeReady) { ModeReady->AddToViewport(); }
+    }
+    else {
+        if (!ensure(MainMenuTarget)) { return; }
+        if (!ensure(CharacterSelectTarget)) { return; }
+        if (!ensure(ModeSelectTarget)) { return; }
+        
+        // Set UI Widget references
+        MainMenu = CreateWidget<UUIWidget>(this, MainMenuTarget);
+        CharacterSelect = CreateWidget<UUIWidget>(this, CharacterSelectTarget);
+        ModeSelect = CreateWidget<UUIWidget>(this, ModeSelectTarget);
+        ModeReady = CreateWidget<UUIWidget>(this, ModeReadyTarget);
+        EscapeMenu = CreateWidget<UUIWidget>(this, EscapeMenuTarget);
+
+        // Add MainMenu to viewport
+        if (MainMenu) { MainMenu->AddToViewport(); }
+
+        // Show Cursor
+        bShowMouseCursor = true;
+
+        // Get Practice Target References
+        FString PracticeTarget = FString("PracticeTarget_BP");
+        const TCHAR* Substring = *PracticeTarget;
+        for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
+        {
+            AStaticMeshActor* Target = *It;
+            if (Target && Target->GetName().Contains(Substring, ESearchCase::IgnoreCase, ESearchDir::FromStart)) {
+                PracticeTargets.Add(Target);
+                PracticeTargetLocations.Add(Target->GetActorLocation());
+            }
+        }
+    }
 }
 
 ///////////////////////////////// UI Functions ////////////////////////////////////
@@ -180,9 +209,37 @@ void AMainPlayerController::OnClickedModeSelectShowdown()
         Mode = 2;
 
         ModeSelect->RemoveFromViewport();
-        MenuPawn->OnClickedModeSelectShowdown();
+        // MenuPawn->OnClickedModeSelectShowdown();
 
         // Possess Character
+        // for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
+        // {
+        //     class AUnrealCharacter* Target = *It;
+        //     if (Target && Target->GetName() == TargetCharacter) {
+        //         Character = Target;
+        //     }
+        // }
+
+        // // Set Menu Pawn Targets
+        // MenuPawn->SetCharacter(Character);
+
+        // // Set Character Targets
+        // Character->SetActorTickEnabled(true);
+        // Character->SetCharacterGameLocation();
+        // Character->SetCharacterRotation(FRotator(0, -90, 0));
+        // Character->TargetState = 2;
+
+        // ModeReady->AddToViewport();
+
+        // Find Opponent or Host Session
+        ULocalPlayer* Player = GetGameInstance()->GetFirstGamePlayer();
+        Cast<ULAGameInstance>(Player->GetGameInstance())->Showdown();
+    }
+}
+
+void AMainPlayerController::OnClickedModeReadyStart()
+{
+    if (Showdown == true) {
         for (TActorIterator<AUnrealCharacter> It(GetWorld()); It; ++It)
         {
             class AUnrealCharacter* Target = *It;
@@ -191,73 +248,78 @@ void AMainPlayerController::OnClickedModeSelectShowdown()
             }
         }
 
-        // Set Menu Pawn Targets
-        MenuPawn->SetCharacter(Character);
+        ModeReady->RemoveFromViewport();
 
-        // Set Character Targets
-        Character->SetActorTickEnabled(true);
-        Character->SetCharacterGameLocation();
-        Character->SetCharacterRotation(FRotator(0, -90, 0));
+        Possess(Character);
+        Character->SetShowdown(true);
+        Character->SetCharacterState(2);
+
+        bShowMouseCursor = false;
+    }
+    else {
+        if (!ensure(MenuPawn) || !ensure(Character)) { return; }
+
+        ModeReady->RemoveFromViewport();
+        MenuPawn->OnClickedModeReadyStart();
+        
+        // Possess Character
+        Possess(Character);
         Character->TargetState = 2;
 
-        ModeReady->AddToViewport();
-
-        // Find Opponent or Host Session
-        ULocalPlayer* Player = GetGameInstance()->GetFirstGamePlayer();
-        FUniqueNetIdWrapper UniqueNetIdWrapper = FUniqueNetIdWrapper(Player->GetPreferredUniqueNetId());
-        Cast<ULAGameInstance>(Player->GetGameInstance())->FindSessions(UniqueNetIdWrapper.GetUniqueNetId(), true, true);
+        // Hide mouse cursor
+        bShowMouseCursor = false;
     }
-}
-
-void AMainPlayerController::OnClickedModeReadyStart()
-{
-    if (!ensure(MenuPawn) || !ensure(Character)) { return; }
-
-    ModeReady->RemoveFromViewport();
-    MenuPawn->OnClickedModeReadyStart();
-    
-    // Possess Character
-    Possess(Character);
-    Character->TargetState = 2;
-
-    // Hide mouse cursor
-    bShowMouseCursor = false;
 }
 
 void AMainPlayerController::OnClickedModeReadyReturn()
 {
-    if (!ensure(MenuPawn)) { return; }
+    if (Showdown) {
+        UGameplayStatics::OpenLevel(GetGameInstance()->GetWorld(), "UnrealMotionMap", true);
 
-    if (CharacterSelect) {
-        Mode = 0;
+        // Destroy Session
+    }
+    else {
+        if (!ensure(MenuPawn)) { return; }
 
-        ModeReady->RemoveFromViewport();
-        MenuPawn->OnClickedModeReadyReturn();
-        CharacterSelect->AddToViewport();
+        if (CharacterSelect) {
+            Mode = 0;
 
-        // Return Character to start location
-        Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
-        Character->SetCharacterRotation(FRotator(0, 0, 0));
-        Character->TargetState = 0;
+            ModeReady->RemoveFromViewport();
+            MenuPawn->OnClickedModeReadyReturn();
+            CharacterSelect->AddToViewport();
+
+            // Return Character to start location
+            Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+            Character->SetCharacterRotation(FRotator(0, 0, 0));
+            Character->TargetState = 0;
+        }
     }
 }
 
 void AMainPlayerController::OnClickedEscapeMenuReturnToTitle()
 {
-    if (MainMenu) {
-        Mode = 0;
+    if (Showdown) { 
+        UGameplayStatics::OpenLevel(GetGameInstance()->GetWorld(), "UnrealMotionMap", true);
 
-        EscapeMenu->RemoveFromViewport();
-        MainMenu->AddToViewport();
+        // Destroy Session
+    }
 
-        MenuPawn->OnClickedEscapeMenuReturnToTitle();
-        UnPossess();
-        Possess(MenuPawn);
+    else {
+        if (MainMenu) {
+            Mode = 0;
 
-        Character->SpawnDefaultController();
-        Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
-        Character->SetCharacterRotation(FRotator(0, 0, 0));
-        Character->TargetState = 0;
+            EscapeMenu->RemoveFromViewport();
+            MainMenu->AddToViewport();
+
+            MenuPawn->OnClickedEscapeMenuReturnToTitle();
+            UnPossess();
+            Possess(MenuPawn);
+
+            Character->SpawnDefaultController();
+            Character->SetCharacterStartLocation(MenuPawn->GetCharacterID());
+            Character->SetCharacterRotation(FRotator(0, 0, 0));
+            Character->TargetState = 0;
+        }
     }
 }
 
@@ -299,6 +361,8 @@ int32 AMainPlayerController::GetMode()
 // Reset Targets
 void AMainPlayerController::ResetTargets()
 {
+    if (Showdown) { return; }
+
     for (int32 i = 0; i < 8; i++)
 	{
 		PracticeTargets[i]->SetActorLocationAndRotation(PracticeTargetLocations[i], FRotator(0, 0, 0), false);

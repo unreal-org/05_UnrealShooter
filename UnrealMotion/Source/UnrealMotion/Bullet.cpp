@@ -71,6 +71,8 @@ void ABullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrim
 	SetRootComponent(ImpactBlast);
 	CollisionMesh->DestroyComponent();
 
+	// UE_LOG(LogTemp, Warning, TEXT("Damage Location: %s"), *GetActorLocation().ToString())
+
 	// apply damage
 	if (OtherActor) {
 		UGameplayStatics::ApplyRadialDamage(

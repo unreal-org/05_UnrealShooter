@@ -88,9 +88,11 @@ void UMainAnimInstance::TargetLerp(float DeltaTimeX)
     if (LerpTime < LerpDuration)
     {
         LerpTime += DeltaTimeX;
-        Spine3Rotation = FMath::Lerp(Spine3Rotation, TargetSpine3Rotation, LerpTime);
+        Spine3Rotation = FMath::Lerp(Spine3Rotation, TargetSpine3Rotation, LerpTime * 5);
         //RightHandRotation = FMath::Lerp(RightHandRotation, TargetHandRotation, LerpTime);
     }
+
+    //if (UnrealCharacter) { Spine3Rotation = UnrealCharacter->GetCameraRotation(); }
 }
 
 // Clamp Rotation

@@ -59,6 +59,8 @@ public:
 	bool Walking = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
 	bool Ready = false;
+	// UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")
+	// bool Showdown = false;
 
 	// Ready Pose Index
 	UPROPERTY(BlueprintReadOnly, Category = "Transition Variables")

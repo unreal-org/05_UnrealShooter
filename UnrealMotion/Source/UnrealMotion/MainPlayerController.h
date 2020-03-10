@@ -85,4 +85,7 @@ private:
 
 	// Mode
 	int32 Mode = 0;
+
+	// bool
+	bool Showdown = false;
 };

@@ -60,11 +60,10 @@ FVector UAimingComponent::ReadyAim(FVector HitLocation)
 	if(HaveAimSolution)
 	{	
 		FVector AimDirection = OutLaunchVelocity.GetSafeNormal();
-		PrevAimDirection = AimDirection;
 		return AimDirection;
 	}
 
-	return PrevAimDirection;
+	return FVector(0, 0, 0);
 }
 
 

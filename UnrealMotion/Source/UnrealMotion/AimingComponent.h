@@ -34,7 +34,7 @@ protected:
 
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float LaunchSpeed = 12500;
+	float LaunchSpeed = 25000;
 
 	// Previous Aim Direction
 	FVector PrevAimDirection;
