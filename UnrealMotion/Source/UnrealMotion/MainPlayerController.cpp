@@ -302,6 +302,8 @@ void AMainPlayerController::OnClickedEscapeMenuReturnToTitle()
         UGameplayStatics::OpenLevel(GetGameInstance()->GetWorld(), "UnrealMotionMap", true);
 
         // Destroy Session
+        // ULocalPlayer* Player = GetGameInstance()->GetFirstGamePlayer();
+        // Cast<ULAGameInstance>(Player->GetGameInstance())->Showdown();
     }
 
     else {

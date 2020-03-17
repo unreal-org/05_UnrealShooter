@@ -72,6 +72,8 @@ void AUnrealCharacter::Tick(float DeltaTime)
 			}
 			break;
 	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Player is alive? %i"), isAlive)
 }
 
 // Called to bind functionality to input
@@ -137,7 +139,7 @@ void AUnrealCharacter::SetisAlive(bool Alive)
 float AUnrealCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	SetisAlive(false);
-	UE_LOG(LogTemp, Warning, TEXT("%s took damage."), *GetName())
+	//UE_LOG(LogTemp, Warning, TEXT("%s took damage."), *GetName())
 	if (MainAnimInstance) { MainAnimInstance->RagdollAlpha = 1; }
     return 0;
 }
